@@ -13,7 +13,7 @@
 <body class="text-slate-800 pb-32">
 
     <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-xl border-b border-slate-700">
-        <div class="max-w-6xl mx-auto px-4 h-16 flex justify-between items-center">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
             <div class="flex items-center gap-3">
                 <i class="ph-bold ph-police-car text-2xl text-blue-400"></i>
                 <h1 class="text-lg font-bold">PÁTIO DIGITAL <span class="text-slate-500 text-xs ml-2">116ª DP</span></h1>
@@ -22,7 +22,7 @@
         </div>
     </header>
 
-    <main class="max-w-6xl mx-auto p-4">
+    <main class="max-w-7xl mx-auto p-4">
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-slate-300">
@@ -37,13 +37,13 @@
                 <p class="text-xs font-bold text-green-400">LIBERADOS</p>
                 <p class="text-2xl font-black text-green-600" id="stat-liberado">-</p>
             </div>
-            <button onclick="abrirForm()" class="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-xl shadow-lg font-bold flex flex-col items-center justify-center transition">
-                <i class="ph-bold ph-plus text-2xl"></i>
+            <button onclick="abrirForm()" class="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-xl shadow-lg font-bold flex flex-col items-center justify-center transition group">
+                <i class="ph-bold ph-plus text-2xl group-hover:scale-110 transition"></i>
                 <span class="text-xs mt-1">NOVO VEÍCULO</span>
             </button>
         </div>
 
-        <input type="text" id="busca" onkeyup="filtrar()" class="w-full p-4 rounded-xl border-none shadow-sm outline-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-500 mb-6 text-lg" placeholder="🔍 Pesquisar Placa, NIBA, Modelo...">
+        <input type="text" id="busca" onkeyup="filtrar()" class="w-full p-4 rounded-xl border-none shadow-sm outline-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-500 mb-6 text-lg placeholder:text-slate-400" placeholder="🔍 Pesquisar Placa, NIBA, Modelo, Cor...">
 
         <div id="grid-veiculos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <p class="col-span-full text-center text-slate-400 py-10">Conectando ao banco de dados...</p>
@@ -52,49 +52,76 @@
 
     <div id="modal-form" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onclick="fecharForm()"></div>
-        <div class="absolute inset-y-0 right-0 w-full md:w-[500px] bg-white shadow-2xl overflow-y-auto flex flex-col fade-in">
+        <div class="absolute inset-y-0 right-0 w-full md:w-[600px] bg-white shadow-2xl overflow-y-auto flex flex-col fade-in">
             <div class="p-5 bg-slate-50 border-b border-slate-200 flex justify-between items-center sticky top-0 z-10">
                 <h2 class="font-bold text-xl flex items-center gap-2"><i class="ph-duotone ph-file-plus"></i> Novo Registro</h2>
-                <button onclick="fecharForm()" class="p-2 bg-slate-200 rounded-full"><i class="ph-bold ph-x"></i></button>
+                <button onclick="fecharForm()" class="p-2 bg-slate-200 rounded-full hover:bg-slate-300 transition"><i class="ph-bold ph-x"></i></button>
             </div>
             
             <div class="p-6 space-y-6">
                 <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
                     <label class="text-xs font-bold text-blue-600 block mb-1">NIBA / ID</label>
-                    <input type="text" id="in-niba" class="w-full p-3 rounded bg-white border border-blue-200 font-mono font-bold" placeholder="00000000">
+                    <input type="text" id="in-niba" class="w-full p-3 rounded bg-white border border-blue-200 font-mono font-bold text-slate-700" placeholder="00000000">
                     
                     <label class="text-xs font-bold text-blue-600 block mt-3 mb-1">PLACA *</label>
-                    <input type="text" id="in-placa" class="w-full p-3 rounded bg-white border-2 border-blue-200 font-black text-2xl text-center uppercase" placeholder="ABC1234">
+                    <input type="text" id="in-placa" class="w-full p-3 rounded bg-white border-2 border-blue-200 font-black text-3xl text-center uppercase tracking-widest" placeholder="ABC1234">
                 </div>
 
                 <div>
                     <label class="text-xs font-bold text-red-500 block mb-1">INFRAÇÃO PENAL</label>
-                    <input type="text" id="in-infracao" class="w-full p-3 rounded border border-red-200 bg-red-50 text-red-800 font-bold" placeholder="Ex: Roubo">
+                    <input type="text" id="in-infracao" class="w-full p-3 rounded border border-red-200 bg-red-50 text-red-800 font-bold placeholder:font-normal placeholder:text-red-300" placeholder="Ex: Roubo, Tráfico">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
-                    <input type="text" id="in-modelo" class="w-full p-3 rounded border border-slate-200" placeholder="Modelo (Ex: Fan 160)">
-                    <input type="text" id="in-cor" class="w-full p-3 rounded border border-slate-200" placeholder="Cor">
-                    <input type="text" id="in-marca" class="w-full p-3 rounded border border-slate-200" placeholder="Marca">
-                    <select id="in-tipo" class="w-full p-3 rounded border border-slate-200 bg-white"><option>Motocicleta</option><option>Automovel</option><option>Utilitario</option><option>Outros</option></select>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 block mb-1">MODELO</label>
+                        <input type="text" id="in-modelo" class="w-full p-3 rounded border border-slate-200" placeholder="Ex: Fan 160">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 block mb-1">COR</label>
+                        <input type="text" id="in-cor" class="w-full p-3 rounded border border-slate-200" placeholder="Ex: Preta">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 block mb-1">MARCA</label>
+                        <input type="text" id="in-marca" class="w-full p-3 rounded border border-slate-200" placeholder="Ex: Honda">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 block mb-1">TIPO</label>
+                        <select id="in-tipo" class="w-full p-3 rounded border border-slate-200 bg-white"><option>Motocicleta</option><option>Automovel</option><option>Utilitario</option><option>Outros</option></select>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
-                    <input type="text" id="in-boe" class="w-full p-3 rounded border border-slate-200" placeholder="Nº BOE">
-                    <input type="text" id="in-processo" class="w-full p-3 rounded border border-slate-200" placeholder="Nº Processo">
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 block mb-1">BOE / VPI</label>
+                        <input type="text" id="in-boe" class="w-full p-3 rounded border border-slate-200" placeholder="Nº BOE">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 block mb-1">PROCESSO</label>
+                        <input type="text" id="in-processo" class="w-full p-3 rounded border border-slate-200" placeholder="Nº Processo">
+                    </div>
                 </div>
 
-                <textarea id="in-obs" class="w-full p-3 rounded border border-slate-200" placeholder="Observações..."></textarea>
-                <input type="text" id="in-foto" class="w-full p-3 rounded border border-slate-200 text-xs" placeholder="Link da Foto (URL)">
+                <div>
+                    <label class="text-xs font-bold text-slate-500 block mb-1">OBSERVAÇÕES</label>
+                    <textarea id="in-obs" class="w-full p-3 rounded border border-slate-200 h-24" placeholder="Descreva o estado do veículo, avarias, local..."></textarea>
+                </div>
 
-                <button onclick="salvar()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg mt-4">SALVAR NO SISTEMA</button>
+                <div>
+                    <label class="text-xs font-bold text-slate-500 block mb-1">FOTO (URL)</label>
+                    <input type="text" id="in-foto" class="w-full p-3 rounded border border-slate-200 text-xs font-mono" placeholder="Cole o link da foto aqui">
+                </div>
+
+                <button onclick="salvar()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg mt-4 flex justify-center items-center gap-2">
+                    <i class="ph-bold ph-floppy-disk"></i> SALVAR NO SISTEMA
+                </button>
             </div>
         </div>
     </div>
 
     <script>
         // =============================================
-        // ✅ SUAS CHAVES JÁ ESTÃO AQUI! NÃO MEXA.
+        // ✅ CHAVES PREENCHIDAS
         // =============================================
         const SUPABASE_URL = 'https://newbrgjewjnebfnhumci.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ld2JyZ2pld2puZWJmbmh1bWNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1NDcyMTAsImV4cCI6MjA4MTEyMzIxMH0.Z_AE5HnKxIwNni9RXgI1aGViJX2v_4Z0Nd5uMEqIue4';
@@ -105,13 +132,9 @@
         // 1. Carregar
         async function carregar() {
             const { data, error } = await supabase.from('veiculos').select('*').order('id', { ascending: false });
-            if (error) { 
-                console.error(error); 
-                alert("Erro ao conectar! Verifique se você rodou o comando SQL no Supabase."); 
-                return; 
-            }
+            if (error) { console.error(error); alert("Erro ao conectar!"); return; }
             
-            // Dashboard
+            // Stats
             document.getElementById('stat-total').innerText = data.length;
             document.getElementById('stat-patio').innerText = data.filter(v => v.status === 'No Pátio').length;
             document.getElementById('stat-liberado').innerText = data.filter(v => v.status === 'Liberado').length;
@@ -120,40 +143,54 @@
             const grid = document.getElementById('grid-veiculos');
             grid.innerHTML = '';
             
-            if (data.length === 0) {
-                grid.innerHTML = '<p class="col-span-full text-center text-slate-400 py-10">Nenhum veículo cadastrado ainda.</p>';
-            }
+            if (data.length === 0) grid.innerHTML = '<p class="col-span-full text-center text-slate-400 py-10">Nenhum veículo cadastrado ainda.</p>';
 
             data.forEach(v => {
                 const isPatio = v.status === 'No Pátio';
                 const statusClass = isPatio ? 'bg-red-500' : 'bg-green-500';
                 const img = v.foto_url || 'https://placehold.co/600x400?text=Sem+Foto';
 
+                // --- AQUI ESTÁ A CORREÇÃO VISUAL ---
                 grid.innerHTML += `
-                <div class="bg-white rounded-xl shadow-sm hover:shadow-lg transition overflow-hidden border border-slate-100 item-veiculo flex flex-col">
-                    <div class="h-48 relative bg-slate-200">
-                        <img src="${img}" class="w-full h-full object-cover cursor-pointer" onclick="window.open('${img}')">
+                <div class="bg-white rounded-xl shadow-sm hover:shadow-lg transition overflow-hidden border border-slate-100 item-veiculo flex flex-col h-full relative group">
+                    
+                    <div class="h-48 relative bg-slate-200 overflow-hidden">
+                        <img src="${img}" class="w-full h-full object-cover cursor-pointer group-hover:scale-105 transition duration-500" onclick="window.open('${img}')">
                         <span class="absolute top-2 right-2 ${statusClass} text-white text-[10px] font-bold px-2 py-1 rounded shadow">${v.status.toUpperCase()}</span>
-                        ${v.niba ? `<span class="absolute top-2 left-2 bg-white/90 text-blue-900 text-[10px] font-bold px-2 py-1 rounded border shadow">NIBA: ${v.niba}</span>` : ''}
+                        ${v.niba ? `<span class="absolute top-2 left-2 bg-white/90 text-blue-900 text-[10px] font-bold px-2 py-1 rounded border shadow font-mono">NIBA: ${v.niba}</span>` : ''}
+                        
                         <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/80 to-transparent p-3">
-                             <h3 class="text-white font-black text-xl leading-none">${v.placa}</h3>
-                             <p class="text-slate-300 text-xs">${v.modelo || ''}</p>
+                             <h3 class="text-white font-black text-2xl leading-none tracking-tight">${v.placa}</h3>
                         </div>
                     </div>
+
                     <div class="p-4 flex flex-col flex-grow">
+                        <div class="flex justify-between items-start mb-3">
+                            <p class="text-sm font-bold text-slate-700 flex items-center gap-1">
+                                ${v.modelo || 'Modelo não inf.'}
+                            </p>
+                            ${v.cor ? `<span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded uppercase border border-slate-200">${v.cor}</span>` : ''}
+                        </div>
+
                         ${v.infracao ? `<div class="bg-red-50 text-red-700 text-xs font-bold p-2 rounded mb-3 border border-red-100 flex items-center gap-2"><i class="ph-fill ph-siren"></i> ${v.infracao.toUpperCase()}</div>` : ''}
                         
-                        <div class="grid grid-cols-2 gap-y-1 text-xs text-slate-500 mb-4">
+                        ${v.observacoes ? `
+                        <div class="bg-slate-50 border border-slate-100 p-2 rounded mb-3" title="${v.observacoes}">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Observações:</p>
+                            <p class="text-xs text-slate-600 line-clamp-2">${v.observacoes}</p>
+                        </div>` : ''}
+
+                        <div class="grid grid-cols-2 gap-y-1 text-xs text-slate-500 mb-4 pt-2 border-t border-slate-100">
                             <div><span class="font-bold">Proc:</span> ${v.processo || '-'}</div>
                             <div><span class="font-bold">BOE:</span> ${v.boe || '-'}</div>
                         </div>
 
                         <div class="mt-auto grid grid-cols-2 gap-2">
                              ${isPatio 
-                                ? `<button onclick="alterarStatus(${v.id}, 'Liberado')" class="bg-green-50 text-green-700 border border-green-200 py-2 rounded font-bold text-xs hover:bg-green-100">LIBERAR</button>`
-                                : `<button class="bg-gray-100 text-gray-400 py-2 rounded font-bold text-xs cursor-not-allowed">ENTREGUE</button>`
+                                ? `<button onclick="alterarStatus(${v.id}, 'Liberado')" class="bg-green-50 text-green-700 border border-green-200 py-2.5 rounded-lg font-bold text-xs hover:bg-green-100 flex items-center justify-center gap-1"><i class="ph-bold ph-key"></i> LIBERAR</button>`
+                                : `<button class="bg-gray-100 text-gray-400 py-2.5 rounded-lg font-bold text-xs cursor-not-allowed flex items-center justify-center gap-1"><i class="ph-bold ph-check"></i> ENTREGUE</button>`
                             }
-                            <button onclick="excluir(${v.id})" class="bg-white text-red-400 border border-red-200 py-2 rounded font-bold text-xs hover:bg-red-50 hover:text-red-600 flex items-center justify-center gap-1"><i class="ph-bold ph-trash"></i> EXCLUIR</button>
+                            <button onclick="excluir(${v.id})" class="bg-white text-red-400 border border-red-200 py-2.5 rounded-lg font-bold text-xs hover:bg-red-50 hover:text-red-600 flex items-center justify-center gap-1"><i class="ph-bold ph-trash"></i> EXCLUIR</button>
                         </div>
                     </div>
                 </div>`;
@@ -182,29 +219,27 @@
             const { error } = await supabase.from('veiculos').insert([dados]);
             
             if(error) {
-                alert("NÃO FOI POSSÍVEL SALVAR!\n\nProvável causa: Falta rodar o comando SQL no Supabase para criar as colunas novas (NIBA, Infração) ou liberar a segurança.");
+                alert("ERRO AO SALVAR!\n" + error.message);
             } else {
                 fecharForm();
                 limparForm();
                 carregar();
-                alert("Veículo salvo com sucesso!");
+                alert("Veículo Salvo!");
             }
         }
 
-        // 3. Excluir e Alterar
+        // 3. Ações
         async function excluir(id) {
             if(confirm("Tem certeza que deseja EXCLUIR este registro?")) {
                 const { error } = await supabase.from('veiculos').delete().eq('id', id);
-                if(error) alert("Erro ao excluir: " + error.message);
-                else carregar();
+                if(error) alert("Erro: " + error.message); else carregar();
             }
         }
 
         async function alterarStatus(id, st) {
             if(confirm("Liberar veículo?")) {
                 const { error } = await supabase.from('veiculos').update({status: st}).eq('id', id);
-                if(error) alert("Erro ao atualizar: " + error.message);
-                else carregar();
+                if(error) alert("Erro: " + error.message); else carregar();
             }
         }
 
@@ -215,9 +250,8 @@
         }
         function abrirForm() { document.getElementById('modal-form').classList.remove('hidden'); }
         function fecharForm() { document.getElementById('modal-form').classList.add('hidden'); }
-        function limparForm() { document.querySelectorAll('input, textarea').forEach(i => i.value = ''); }
+        function limparForm() { document.querySelectorAll('input, textarea, select').forEach(i => i.value = ''); }
 
-        // Start
         carregar();
     </script>
 </body>
