@@ -188,7 +188,7 @@
             document.getElementById('count-liberado').innerText = CACHE.filter(v => v.status === 'Liberado').length;
         }
 
-        // 2. RENDERIZAÇÃO DA LISTA (Com Data-ID para clique seguro)
+        // 2. RENDERIZAÇÃO DA LISTA (CORRIGIDA)
         function renderList(list) {
             const el = document.getElementById('lista');
             el.innerHTML = '';
@@ -204,43 +204,48 @@
                     ? '<span class="text-[10px] font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded uppercase tracking-wide">Apreendido</span>'
                     : '<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded uppercase tracking-wide">Liberado</span>';
                 
-                // CRIAÇÃO DO CARTÃO COM DATA ATTRIBUTE
                 const card = document.createElement('div');
                 card.className = "bg-white p-5 rounded border border-slate-200 card-shadow hover:border-blue-400 transition cursor-pointer active:bg-slate-50";
-                card.dataset.id = v.id; // ID guardado aqui
+                
+                // --- CORREÇÃO AQUI: Onclick direto no elemento e sem pointer-events-none ---
+                card.setAttribute('onclick', `abrir('${v.id}')`);
                 
                 card.innerHTML = `
-                    <div class="flex justify-between items-start mb-2 pointer-events-none">
+                    <div class="flex justify-between items-start mb-2">
                         <h3 class="text-xl font-black text-slate-800 font-mono tracking-wide">${v.placa}</h3>
                         ${statusHtml}
                     </div>
                     
-                    <div class="text-sm font-bold text-slate-600 flex items-center gap-2 mb-4 pointer-events-none">
+                    <div class="text-sm font-bold text-slate-600 flex items-center gap-2 mb-4">
                         <i class="ph-fill ph-car text-slate-400"></i>
                         ${v.modelo || 'MODELO N/I'}
                         <span class="text-xs font-normal text-slate-300">|</span>
                         <span class="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">${v.cor || 'COR N/I'}</span>
                     </div>
 
-                    <div class="flex flex-wrap gap-2 pt-3 border-t border-slate-100 pointer-events-none">
+                    <div class="flex flex-wrap gap-2 pt-3 border-t border-slate-100">
                         ${v.niba ? `<span class="text-[10px] font-mono font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100">NIBA: ${v.niba}</span>` : ''}
                         ${v.boe ? `<span class="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-100">BOE: ${v.boe}</span>` : ''}
                         ${v.processo ? `<span class="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-100">PROC: ${v.processo}</span>` : ''}
                     </div>
                 `;
                 
-                // CLIQUE DIRETO NO ELEMENTO (Mais seguro que onclick string)
-                card.addEventListener('click', () => abrir(v.id));
                 el.appendChild(card);
             });
         }
 
-        // 3. ABRIR MODAL
+        // 3. ABRIR MODAL (CORRIGIDA)
         function abrir(id) {
-            ATUAL = CACHE.find(v => v.id === id);
-            if(!ATUAL) return alert("Erro interno: ID não encontrado.");
+            // --- CORREÇÃO AQUI: Uso de == para aceitar string ou number ---
+            ATUAL = CACHE.find(v => v.id == id);
+            
+            if(!ATUAL) {
+                console.log("ID procurado:", id);
+                console.log("Cache:", CACHE);
+                return alert("Erro interno: ID não encontrado.");
+            }
 
-            EDITING = true; toggleEdit(); // Reseta para modo leitura sempre que abrir
+            EDITING = true; toggleEdit(); // Reseta para modo leitura
             
             // Preenche campos
             ['placa','niba','status','modelo','marca','cor','tipo','infracao','boe','processo','obs'].forEach(k => {
