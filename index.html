@@ -3,34 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SGP - Gestão Policial</title>
+    <title>SGP - Sistema Policial</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     
     <style>
         body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         
         /* Animações */
-        .modal-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .modal-enter { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         
         /* Utilitários */
         .hide-scroll::-webkit-scrollbar { display: none; }
         
-        /* Inputs do Formulário */
-        .input-pro {
-            width: 100%; background: transparent; border: 1px solid #e2e8f0; border-radius: 6px;
-            padding: 10px; font-size: 0.9rem; color: #1e293b; font-weight: 500;
-            transition: all 0.2s;
-        }
-        .input-pro:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); outline: none; }
-        .input-pro:read-only { background-color: #f8fafc; border-color: transparent; color: #64748b; }
+        /* Campos */
+        .input-pro { width: 100%; background: transparent; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; font-weight: 500; color: #334155; }
+        .input-pro:read-only { background: #f8fafc; border-color: transparent; color: #64748b; }
         
         /* Modo Edição */
-        .editing .input-pro { background-color: #fff; border-color: #cbd5e1; }
+        .editing .input-pro { background: #fff; border-color: #3b82f6; }
         .btn-del-foto { display: none; }
         .editing .btn-del-foto { display: flex; }
     </style>
@@ -40,13 +35,13 @@
     <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-lg border-b border-slate-700">
         <div class="max-w-3xl mx-auto px-4 h-16 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <i class="ph-bold ph-police-car text-2xl text-blue-400"></i>
+                <div class="bg-white/10 p-2 rounded"><i class="ph-bold ph-shield-check text-xl text-blue-400"></i></div>
                 <div>
                     <h1 class="text-sm font-bold tracking-widest uppercase">Pátio 116ª DP</h1>
                     <p class="text-[10px] text-slate-400">Sistema Integrado</p>
                 </div>
             </div>
-            <button onclick="novoVeiculo()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-bold uppercase transition flex items-center gap-1 shadow-lg">
+            <button onclick="novoVeiculo()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded text-xs font-bold uppercase transition shadow-lg flex items-center gap-2">
                 <i class="ph-bold ph-plus"></i> Novo
             </button>
         </div>
@@ -55,61 +50,60 @@
     <main class="max-w-3xl mx-auto p-4">
         
         <div class="grid grid-cols-2 gap-3 mb-6">
-            <div class="bg-white p-3 rounded shadow-sm border-l-4 border-slate-800 flex flex-col justify-center">
-                <span class="text-[10px] font-bold text-slate-400 uppercase">Apreendidos</span>
-                <span class="text-2xl font-black text-slate-800" id="count-patio">-</span>
+            <div class="bg-white p-4 rounded border-l-4 border-slate-800 shadow-sm">
+                <p class="text-[10px] font-bold text-slate-400 uppercase">No Pátio</p>
+                <p class="text-3xl font-black text-slate-800 mt-1" id="count-patio">-</p>
             </div>
-            <div class="bg-white p-3 rounded shadow-sm border-l-4 border-emerald-500 flex flex-col justify-center">
-                <span class="text-[10px] font-bold text-slate-400 uppercase">Liberados</span>
-                <span class="text-2xl font-black text-emerald-600" id="count-liberado">-</span>
+            <div class="bg-white p-4 rounded border-l-4 border-emerald-500 shadow-sm">
+                <p class="text-[10px] font-bold text-slate-400 uppercase">Liberados</p>
+                <p class="text-3xl font-black text-emerald-600 mt-1" id="count-liberado">-</p>
             </div>
         </div>
 
         <div class="relative mb-6">
             <i class="ph-bold ph-magnifying-glass absolute left-4 top-3.5 text-slate-400"></i>
-            <input type="text" id="busca" onkeyup="filtrar()" 
-                class="w-full pl-10 pr-4 py-3 bg-white border-none rounded shadow-sm ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium" 
-                placeholder="Pesquisar Placa, BOE, Processo...">
+            <input type="text" id="busca" onkeyup="filtrar()" class="w-full pl-10 pr-4 py-3 bg-white border-none rounded shadow-sm outline-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-medium" placeholder="Buscar Placa, NIBA, Processo...">
         </div>
 
         <div id="lista" class="space-y-3">
-            <div class="text-center py-10 text-slate-400 text-xs font-bold uppercase animate-pulse">Carregando Banco de Dados...</div>
+            <div class="text-center py-10 text-slate-400 text-xs font-bold uppercase animate-pulse">Sincronizando dados...</div>
         </div>
     </main>
 
-    <div id="modal" class="fixed inset-0 z-50 hidden flex flex-col">
-        <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm transition-opacity" onclick="fecharModal()"></div>
+    <div id="modal" class="fixed inset-0 z-[100] hidden flex flex-col">
+        <div class="absolute inset-0 bg-slate-900/90 backdrop-blur-sm transition-opacity" onclick="fecharModal()"></div>
         
-        <div class="absolute inset-x-0 bottom-0 top-6 md:top-10 md:inset-x-auto md:right-0 md:w-[600px] bg-white rounded-t-2xl md:rounded-none shadow-2xl overflow-hidden flex flex-col modal-up">
+        <div class="absolute inset-x-0 bottom-0 top-4 md:top-10 md:inset-x-auto md:right-0 md:w-[600px] bg-slate-50 rounded-t-2xl md:rounded-none shadow-2xl overflow-hidden flex flex-col modal-enter">
             
-            <div class="bg-slate-50 px-5 py-3 border-b border-slate-200 flex justify-between items-center">
-                <button onclick="fecharModal()" class="p-2 -ml-2 text-slate-400 hover:text-slate-700"><i class="ph-bold ph-x text-lg"></i></button>
-                <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Detalhes do Veículo</span>
-                <button onclick="toggleEdit()" id="btn-edit" class="text-blue-600 bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-full text-xs font-bold transition flex items-center gap-1">
+            <div class="bg-white px-5 py-3 border-b border-slate-200 flex justify-between items-center sticky top-0 z-10">
+                <button onclick="fecharModal()" class="text-slate-400 hover:text-slate-700"><i class="ph-bold ph-x text-2xl"></i></button>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Prontuário</span>
+                <button onclick="toggleEdit()" id="btn-edit" class="text-blue-600 bg-blue-50 px-4 py-2 rounded text-xs font-bold uppercase transition flex items-center gap-2">
                     <i class="ph-bold ph-pencil-simple"></i> Editar
                 </button>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-5 space-y-6 bg-slate-50" id="form-area">
+            <div class="flex-1 overflow-y-auto p-5 space-y-6" id="form-area">
                 <input type="hidden" id="in-id">
 
                 <div class="space-y-2">
                     <div class="flex justify-between items-end">
                         <label class="text-[10px] font-bold text-slate-400 uppercase">Fotos</label>
-                        <label class="bg-slate-800 text-white px-3 py-1.5 rounded text-[10px] font-bold uppercase cursor-pointer hover:bg-slate-700 transition flex items-center gap-1">
-                            <i class="ph-bold ph-camera"></i> + Foto
+                        <label class="bg-slate-900 text-white px-3 py-1.5 rounded text-[10px] font-bold uppercase cursor-pointer flex items-center gap-1 shadow hover:bg-slate-800">
+                            <i class="ph-bold ph-camera"></i> Adicionar
                             <input type="file" accept="image/*" class="hidden" onchange="uploadFoto(this)">
                         </label>
                     </div>
-                    <div id="galeria" class="flex gap-2 overflow-x-auto pb-2 hide-scroll"></div>
-                    <p id="msg-foto" class="hidden text-center text-[10px] font-bold text-blue-600 animate-pulse">Enviando...</p>
+                    <div id="galeria" class="flex gap-2 overflow-x-auto pb-2 hide-scroll snap-x"></div>
+                    <p id="msg-foto" class="hidden text-center text-[10px] font-bold text-blue-600 animate-pulse">Enviando imagem...</p>
                 </div>
 
-                <div class="bg-white p-4 rounded border border-slate-200 shadow-sm">
+                <div class="bg-white p-5 rounded border border-slate-200 shadow-sm relative overflow-hidden">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-600"></div>
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <div>
                             <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Placa</label>
-                            <input id="in-placa" class="input-pro text-2xl font-mono font-black uppercase text-slate-900 tracking-wider bg-slate-50 border-transparent text-center" readonly>
+                            <input id="in-placa" class="input-pro text-3xl font-mono font-black uppercase text-slate-900 tracking-widest p-0 border-none bg-transparent" readonly>
                         </div>
                         <div>
                             <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">NIBA</label>
@@ -118,15 +112,15 @@
                     </div>
                     <div>
                         <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Situação</label>
-                        <select id="in-status" class="input-pro font-bold" disabled>
-                            <option value="No Pátio">🔒 APREENDIDO (NO PÁTIO)</option>
-                            <option value="Liberado">✅ LIBERADO (ENTREGUE)</option>
+                        <select id="in-status" class="input-pro font-bold bg-slate-50" disabled>
+                            <option value="No Pátio">🔒 APREENDIDO</option>
+                            <option value="Liberado">✅ LIBERADO</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="space-y-3">
-                    <h3 class="text-xs font-bold text-slate-900 uppercase">Veículo</h3>
+                    <h3 class="text-xs font-bold text-slate-900 uppercase border-b border-slate-200 pb-1">Veículo</h3>
                     <div class="grid grid-cols-2 gap-3">
                         <div><label class="text-[10px] font-bold text-slate-400 uppercase">Modelo</label><input id="in-modelo" class="input-pro" readonly></div>
                         <div><label class="text-[10px] font-bold text-slate-400 uppercase">Marca</label><input id="in-marca" class="input-pro" readonly></div>
@@ -136,22 +130,25 @@
                 </div>
 
                 <div class="space-y-3">
-                    <h3 class="text-xs font-bold text-slate-900 uppercase">Jurídico</h3>
-                    <div><label class="text-[10px] font-bold text-red-400 uppercase">Infração</label><input id="in-infracao" class="input-pro text-red-700 font-bold bg-red-50 border-red-100" readonly></div>
+                    <h3 class="text-xs font-bold text-slate-900 uppercase border-b border-slate-200 pb-1">Jurídico</h3>
+                    <div class="bg-red-50 p-2 rounded border border-red-100">
+                        <label class="text-[10px] font-bold text-red-400 uppercase">Infração</label>
+                        <input id="in-infracao" class="input-pro text-red-700 font-bold bg-transparent border-none p-0" readonly>
+                    </div>
                     <div class="grid grid-cols-2 gap-3">
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase">BOE</label><input id="in-boe" class="input-pro" readonly></div>
+                        <div><label class="text-[10px] font-bold text-slate-400 uppercase">BOE / VPI</label><input id="in-boe" class="input-pro" readonly></div>
                         <div><label class="text-[10px] font-bold text-slate-400 uppercase">Processo</label><input id="in-processo" class="input-pro" readonly></div>
                     </div>
                     <div>
                         <label class="text-[10px] font-bold text-slate-400 uppercase">Observações</label>
-                        <textarea id="in-obs" rows="3" class="input-pro resize-none" readonly></textarea>
+                        <textarea id="in-obs" rows="4" class="input-pro resize-none leading-relaxed" readonly></textarea>
                     </div>
                 </div>
             </div>
 
             <div id="footer-save" class="p-4 bg-white border-t border-slate-200 hidden">
-                <button onclick="salvar()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded shadow-lg transition uppercase text-xs tracking-widest">
-                    Confirmar Alterações
+                <button onclick="salvar()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded shadow-lg transition uppercase text-xs tracking-widest">
+                    Salvar Alterações
                 </button>
             </div>
         </div>
@@ -172,7 +169,7 @@
 
         async function init() {
             const { data, error } = await supabase.from('veiculos').select('*').order('id', { ascending: false });
-            if (error) return alert("Erro ao carregar dados.");
+            if (error) return alert("Erro de conexão.");
             CACHE = data;
             
             document.getElementById('count-patio').innerText = CACHE.filter(v => v.status === 'No Pátio').length;
@@ -181,49 +178,51 @@
             renderList(data);
         }
 
-        // --- LISTA COM MAIS DETALHES ---
         function renderList(list) {
             const el = document.getElementById('lista');
             el.innerHTML = '';
             
-            if(list.length === 0) el.innerHTML = '<div class="text-center py-10 text-slate-400 text-sm">Nenhum registro.</div>';
+            if(list.length === 0) el.innerHTML = '<div class="text-center py-10 text-slate-400 text-sm">Nenhum registro encontrado.</div>';
 
             list.forEach(v => {
                 const isPatio = v.status === 'No Pátio';
-                const statusHtml = isPatio 
+                const statusBadge = isPatio 
                     ? '<span class="text-[10px] font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded uppercase">Apreendido</span>'
                     : '<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded uppercase">Liberado</span>';
                 
+                // Conversão segura do ID para string para evitar erro no onclick
+                const safeId = String(v.id);
+
                 el.innerHTML += `
-                <div onclick="abrir(${v.id})" class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm hover:border-blue-400 transition cursor-pointer group">
-                    <div class="flex justify-between items-center mb-2">
-                        <h3 class="text-lg font-black text-slate-800 font-mono tracking-wide">${v.placa}</h3>
-                        ${statusHtml}
+                <div onclick="abrir('${safeId}')" class="bg-white p-4 rounded border border-slate-200 shadow-sm hover:border-blue-400 transition cursor-pointer active:scale-[0.98]">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-xl font-black text-slate-800 font-mono tracking-wide">${v.placa}</h3>
+                        ${statusBadge}
                     </div>
                     
-                    <div class="text-sm font-bold text-slate-600 flex items-center gap-2 mb-3">
+                    <div class="flex items-center gap-2 text-sm font-bold text-slate-600 mb-3">
                         <i class="ph-fill ph-car text-slate-400"></i>
-                        ${v.modelo || 'Modelo N/I'}
-                        <span class="text-xs font-normal text-slate-400">•</span>
-                        <span class="text-xs font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">${v.cor || 'COR N/I'}</span>
+                        ${v.modelo || 'MODELO N/I'}
+                        <span class="text-xs font-normal text-slate-300">|</span>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">${v.cor || 'COR N/I'}</span>
                     </div>
 
                     <div class="flex flex-wrap gap-2 pt-3 border-t border-slate-100">
-                        ${v.niba ? `<span class="text-[10px] font-mono font-medium text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-100">NIBA: ${v.niba}</span>` : ''}
-                        ${v.boe ? `<span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100">BOE: ${v.boe}</span>` : ''}
-                        ${v.processo ? `<span class="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded border border-purple-100">PROC: ${v.processo}</span>` : ''}
+                        ${v.niba ? `<span class="text-[10px] font-mono font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100">NIBA: ${v.niba}</span>` : ''}
+                        ${v.boe ? `<span class="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-100">BOE: ${v.boe}</span>` : ''}
+                        ${v.processo ? `<span class="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-100">PROC: ${v.processo}</span>` : ''}
                     </div>
                 </div>`;
             });
         }
 
-        // --- MODAL DETALHADO ---
+        // --- ABRIR MODAL (Com correção de ID) ---
         function abrir(id) {
-            ATUAL = CACHE.find(v => v.id === id);
-            if(!ATUAL) return;
+            // Converte para número para achar no array, ou string se for string
+            ATUAL = CACHE.find(v => String(v.id) === String(id));
+            if(!ATUAL) return alert("Erro: Veículo não encontrado na memória.");
 
-            // Reseta modal
-            EDITING = true; toggleEdit(); // Força modo leitura
+            EDITING = true; toggleEdit(); // Reseta para leitura
             
             // Preenche campos
             ['placa','niba','status','modelo','marca','cor','tipo','infracao','boe','processo','obs'].forEach(k => {
@@ -242,16 +241,16 @@
             
             let fotos = ATUAL.fotos || [];
             if(fotos.length === 0 && ATUAL.foto_url) fotos = [ATUAL.foto_url];
-            ATUAL.fotos = fotos; // Garante sync
+            ATUAL.fotos = fotos;
 
             if(fotos.length === 0) {
-                el.innerHTML = '<div class="text-[10px] text-slate-400 font-bold bg-slate-100 px-3 py-2 rounded w-full text-center border border-dashed border-slate-300">SEM FOTOS</div>';
+                el.innerHTML = '<div class="text-[10px] font-bold text-slate-400 bg-slate-100 border border-dashed border-slate-300 p-3 rounded w-full text-center">SEM FOTOS</div>';
             } else {
                 fotos.forEach((url, i) => {
                     el.innerHTML += `
-                    <div class="min-w-[80px] w-20 h-20 bg-slate-200 rounded overflow-hidden relative border border-slate-300 group">
+                    <div class="relative w-20 h-20 bg-slate-200 rounded overflow-hidden border border-slate-300 shrink-0">
                         <img src="${url}" class="w-full h-full object-cover cursor-pointer" onclick="window.open('${url}')">
-                        <button onclick="delFoto(${i})" class="btn-del-foto absolute top-0.5 right-0.5 bg-red-600 text-white w-5 h-5 rounded-full items-center justify-center shadow hover:bg-red-700">
+                        <button onclick="delFoto(${i})" class="btn-del-foto absolute top-0.5 right-0.5 bg-red-600 text-white w-5 h-5 rounded-full items-center justify-center shadow hover:bg-red-700 z-10">
                             <i class="ph-bold ph-x text-xs"></i>
                         </button>
                     </div>`;
@@ -259,12 +258,12 @@
             }
         }
 
-        // --- LÓGICA DE EDIÇÃO ---
+        // --- EDIÇÃO ---
         function toggleEdit() {
             EDITING = !EDITING;
             const container = document.getElementById('form-area');
-            const btn = document.getElementById('btn-edit');
             const footer = document.getElementById('footer-save');
+            const btn = document.getElementById('btn-edit');
             const inputs = container.querySelectorAll('input, select, textarea');
 
             if(EDITING) {
@@ -288,7 +287,7 @@
                     i.setAttribute('readonly', true);
                     if(i.tagName === 'SELECT') i.setAttribute('disabled', true);
                 });
-                if(ATUAL) abrir(ATUAL.id); // Recarrega original se cancelar
+                if(ATUAL) abrir(ATUAL.id); // Recarrega original
             }
         }
 
@@ -309,7 +308,7 @@
             const { error } = await supabase.from('veiculos').update(updates).eq('id', ATUAL.id);
             if(error) alert("Erro: " + error.message);
             else {
-                alert("Atualizado!");
+                alert("Atualizado com sucesso!");
                 fecharModal();
                 init();
             }
@@ -323,20 +322,17 @@
             const file = input.files[0];
             const name = `foto_${ATUAL.placa}_${Date.now()}.jpg`;
             
-            // 1. Upload
             const { error } = await supabase.storage.from('patio').upload(name, file);
-            if(error) { alert("Erro Upload. Balde público?"); document.getElementById('msg-foto').classList.add('hidden'); return; }
+            if(error) { alert("Erro Upload: " + error.message); document.getElementById('msg-foto').classList.add('hidden'); return; }
             
-            // 2. Link
             const { data } = supabase.storage.from('patio').getPublicUrl(name);
             const novasFotos = [...(ATUAL.fotos || []), data.publicUrl];
             
-            // 3. Salva
             await supabase.from('veiculos').update({ fotos: novasFotos }).eq('id', ATUAL.id);
             ATUAL.fotos = novasFotos;
             renderGaleria();
             document.getElementById('msg-foto').classList.add('hidden');
-            if(!EDITING) document.getElementById('form-area').classList.add('editing'); // Mostra botão del
+            if(!EDITING) document.getElementById('form-area').classList.add('editing'); 
         }
 
         async function delFoto(i) {
@@ -358,8 +354,8 @@
         function fecharModal() { document.getElementById('modal').classList.add('hidden'); }
         function filtrar() {
             const t = document.getElementById('busca').value.toLowerCase();
-            const items = document.querySelectorAll('#lista > div');
-            items.forEach((el, i) => {
+            const els = document.querySelectorAll('#lista > div');
+            els.forEach((el, i) => {
                 const v = CACHE[i];
                 if(v) {
                     const txt = (v.placa + v.modelo + v.niba + v.boe + v.processo).toLowerCase();
