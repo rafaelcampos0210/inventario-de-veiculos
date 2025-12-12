@@ -3,37 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SGP - Sistema Policial</title>
+    <title>SGP - Sistema Integrado</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     
     <style>
         body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .hide-scroll::-webkit-scrollbar { display: none; }
         
-        /* Campos */
-        .input-pro { width: 100%; background: transparent; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; font-weight: 500; color: #334155; }
-        .input-pro:read-only { background: #f8fafc; border-color: transparent; color: #64748b; }
+        /* Modal e Animações */
+        .modal-overlay { background-color: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); }
+        .modal-content { animation: slideUp 0.3s ease-out forwards; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        /* Campos de Formulário */
+        .input-pro {
+            width: 100%; background: transparent; border: 1px solid #cbd5e1; border-radius: 8px;
+            padding: 12px; font-size: 0.95rem; color: #1e293b; font-weight: 500; transition: all 0.2s;
+        }
+        .input-pro:read-only { background-color: #f8fafc; border-color: transparent; color: #64748b; }
         
         /* Modo Edição */
-        .editing .input-pro { background: #fff; border-color: #3b82f6; }
-        .btn-del-foto { display: none; }
-        .editing .btn-del-foto { display: flex; }
+        .editing .input-pro { background-color: #fff; border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
+        .btn-del-foto { display: none !important; }
+        .editing .btn-del-foto { display: flex !important; }
     </style>
 </head>
-<body class="text-slate-800 pb-24">
+<body class="text-slate-800 pb-32">
 
     <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-lg border-b border-slate-700">
-        <div class="max-w-3xl mx-auto px-4 h-16 flex justify-between items-center">
+        <div class="max-w-3xl mx-auto px-5 h-16 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <i class="ph-bold ph-police-car text-2xl text-blue-400"></i>
-                <h1 class="text-sm font-bold tracking-widest uppercase">Pátio 116ª DP</h1>
+                <div class="bg-white/10 p-2 rounded border border-white/5"><i class="ph-bold ph-shield-check text-xl text-blue-400"></i></div>
+                <div>
+                    <h1 class="text-sm font-black tracking-widest uppercase">Pátio 116ª DP</h1>
+                    <p class="text-[10px] text-slate-400 font-medium">Gestão de Bens</p>
+                </div>
             </div>
-            <button onclick="novoVeiculo()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded text-xs font-bold uppercase shadow-lg flex items-center gap-2">
-                <i class="ph-bold ph-plus"></i> Novo
+            <button onclick="window.novoVeiculo()" class="bg-blue-600 active:bg-blue-700 hover:bg-blue-500 text-white px-4 py-2 rounded text-xs font-bold uppercase transition shadow-lg flex items-center gap-2 transform active:scale-95">
+                <i class="ph-bold ph-plus text-lg"></i> Novo
             </button>
         </div>
     </header>
@@ -42,101 +53,107 @@
         
         <div class="grid grid-cols-2 gap-3 mb-6">
             <div class="bg-white p-4 rounded border-l-4 border-slate-800 shadow-sm">
-                <p class="text-[10px] font-bold text-slate-400 uppercase">No Pátio</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Apreendidos</p>
                 <p class="text-3xl font-black text-slate-800 mt-1" id="count-patio">-</p>
             </div>
             <div class="bg-white p-4 rounded border-l-4 border-emerald-500 shadow-sm">
-                <p class="text-[10px] font-bold text-slate-400 uppercase">Liberados</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Liberados</p>
                 <p class="text-3xl font-black text-emerald-600 mt-1" id="count-liberado">-</p>
             </div>
         </div>
 
         <div class="relative mb-6">
-            <input type="text" id="busca" onkeyup="filtrar()" class="w-full p-4 rounded shadow-sm border-none outline-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600" placeholder="🔍 Pesquisar Placa, NIBA...">
+            <input type="text" id="busca" onkeyup="window.filtrar()" 
+                class="w-full pl-4 pr-4 py-4 bg-white border-none rounded shadow-sm outline-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-medium text-slate-700 placeholder:text-slate-400" 
+                placeholder="🔍 Pesquisar Placa, NIBA, BOE...">
         </div>
 
-        <div id="lista" class="space-y-3 pb-10">
-            <div class="text-center py-10 text-slate-400 text-xs font-bold uppercase animate-pulse">Carregando...</div>
+        <div id="lista" class="space-y-4 pb-10">
+            <div class="text-center py-10 text-slate-400 text-xs font-bold uppercase animate-pulse">Carregando Banco de Dados...</div>
         </div>
     </main>
 
     <div id="modal" class="fixed inset-0 z-[100] hidden flex flex-col">
-        <div class="absolute inset-0 bg-slate-900/90 backdrop-blur-sm" onclick="fecharModal()"></div>
+        <div class="absolute inset-0 modal-overlay transition-opacity" onclick="window.fecharModal()"></div>
         
-        <div class="absolute inset-x-0 bottom-0 top-2 md:top-10 md:inset-x-auto md:right-0 md:w-[600px] bg-slate-50 md:rounded-l-2xl shadow-2xl overflow-hidden flex flex-col">
+        <div class="absolute inset-x-0 bottom-0 top-0 md:top-10 md:inset-x-auto md:right-0 md:w-[600px] bg-slate-50 md:rounded-l-2xl shadow-2xl overflow-hidden flex flex-col modal-content">
             
-            <div class="bg-white px-5 py-3 border-b border-slate-200 flex justify-between items-center sticky top-0 z-10">
-                <button onclick="fecharModal()" class="text-slate-400 p-2"><i class="ph-bold ph-x text-2xl"></i></button>
-                <span class="text-xs font-bold text-slate-500 uppercase">Ficha do Veículo</span>
-                <button onclick="toggleEdit()" id="btn-edit" class="text-blue-600 bg-blue-50 px-4 py-2 rounded text-xs font-bold uppercase flex items-center gap-2">
+            <div class="bg-white px-5 py-4 border-b border-slate-200 flex justify-between items-center sticky top-0 z-10 shadow-sm">
+                <button onclick="window.fecharModal()" class="text-slate-400 hover:text-slate-700 p-1 bg-slate-100 rounded-full"><i class="ph-bold ph-x text-xl"></i></button>
+                <span class="text-xs font-black text-slate-500 uppercase tracking-widest">PRONTUÁRIO</span>
+                <button onclick="window.toggleEdit()" id="btn-edit" class="text-blue-600 bg-blue-50 border border-blue-100 px-4 py-2 rounded text-xs font-bold uppercase transition flex items-center gap-2 active:scale-95 hover:bg-blue-100">
                     <i class="ph-bold ph-pencil-simple"></i> Editar
                 </button>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-5 space-y-6" id="form-area">
+            <div class="flex-1 overflow-y-auto p-5 space-y-8 bg-slate-50" id="form-area">
                 <input type="hidden" id="in-id">
 
-                <div class="space-y-2">
+                <div class="space-y-3">
                     <div class="flex justify-between items-end">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase">Fotos</label>
-                        <label class="bg-slate-900 text-white px-3 py-1.5 rounded text-[10px] font-bold uppercase cursor-pointer flex items-center gap-1 shadow">
-                            <i class="ph-bold ph-camera"></i> Adicionar
-                            <input type="file" accept="image/*" class="hidden" onchange="uploadFoto(this)">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Registro Fotográfico</label>
+                        <label class="bg-slate-900 text-white px-4 py-2 rounded text-[10px] font-bold uppercase cursor-pointer flex items-center gap-2 shadow hover:bg-slate-800 transition active:scale-95">
+                            <i class="ph-bold ph-camera text-lg"></i> Adicionar
+                            <input type="file" accept="image/*" class="hidden" onchange="window.uploadFoto(this)">
                         </label>
                     </div>
-                    <div id="galeria" class="flex gap-2 overflow-x-auto pb-2 hide-scroll snap-x min-h-[90px]"></div>
-                    <p id="msg-foto" class="hidden text-center text-[10px] font-bold text-blue-600 animate-pulse">Enviando...</p>
+                    <div id="galeria" class="flex gap-3 overflow-x-auto pb-2 hide-scroll snap-x min-h-[100px]"></div>
+                    <p id="msg-foto" class="hidden text-center text-[10px] font-bold text-blue-600 animate-pulse bg-blue-50 py-2 rounded border border-blue-100">Enviando imagem para o servidor...</p>
                 </div>
 
-                <div class="bg-white p-5 rounded border border-slate-200 shadow-sm relative overflow-hidden">
+                <div class="bg-white p-6 rounded border border-slate-200 shadow-sm relative overflow-hidden">
                     <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-600"></div>
-                    <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="grid grid-cols-2 gap-6 mb-5">
                         <div>
-                            <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Placa</label>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1.5">Placa</label>
                             <input id="in-placa" class="input-pro text-3xl font-mono font-black uppercase text-slate-900 tracking-widest p-0 border-none bg-transparent" readonly>
                         </div>
                         <div>
-                            <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">NIBA</label>
-                            <input id="in-niba" class="input-pro font-mono text-blue-600 font-bold" readonly>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1.5">NIBA</label>
+                            <input id="in-niba" class="input-pro font-mono text-blue-600 font-bold bg-blue-50 border-blue-100" readonly>
                         </div>
                     </div>
                     <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Situação</label>
-                        <select id="in-status" class="input-pro font-bold bg-slate-100" disabled>
-                            <option value="No Pátio">🔒 APREENDIDO</option>
-                            <option value="Liberado">✅ LIBERADO</option>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1.5">Situação</label>
+                        <select id="in-status" class="input-pro font-bold bg-slate-100 border-transparent text-slate-700" disabled>
+                            <option value="No Pátio">🔒 APREENDIDO NO PÁTIO</option>
+                            <option value="Liberado">✅ LIBERADO / ENTREGUE</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
-                    <div><label class="text-[10px] font-bold text-slate-400 uppercase">Modelo</label><input id="in-modelo" class="input-pro" readonly></div>
-                    <div><label class="text-[10px] font-bold text-slate-400 uppercase">Marca</label><input id="in-marca" class="input-pro" readonly></div>
-                    <div><label class="text-[10px] font-bold text-slate-400 uppercase">Cor</label><input id="in-cor" class="input-pro" readonly></div>
-                    <div><label class="text-[10px] font-bold text-slate-400 uppercase">Tipo</label><input id="in-tipo" class="input-pro" readonly></div>
+                <div class="space-y-4">
+                    <h3 class="text-xs font-bold text-slate-900 uppercase border-b border-slate-200 pb-2">Características do Veículo</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Modelo</label><input id="in-modelo" class="input-pro" readonly></div>
+                        <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Marca</label><input id="in-marca" class="input-pro" readonly></div>
+                        <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Cor</label><input id="in-cor" class="input-pro" readonly></div>
+                        <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Tipo</label><input id="in-tipo" class="input-pro" readonly></div>
+                    </div>
                 </div>
 
-                <div class="space-y-3">
-                    <div class="bg-red-50 p-2 rounded border border-red-100">
-                        <label class="text-[10px] font-bold text-red-400 uppercase">Infração</label>
-                        <input id="in-infracao" class="input-pro text-red-700 font-bold bg-transparent border-none p-0" readonly>
+                <div class="space-y-4">
+                    <h3 class="text-xs font-bold text-slate-900 uppercase border-b border-slate-200 pb-2">Dados Jurídicos</h3>
+                    <div class="bg-red-50 p-3 rounded border border-red-100">
+                        <label class="text-[10px] font-bold text-red-400 uppercase block mb-1">Infração Penal</label>
+                        <input id="in-infracao" class="input-pro text-red-700 font-bold bg-transparent border-none p-0 uppercase" readonly>
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase">BOE</label><input id="in-boe" class="input-pro" readonly></div>
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase">Processo</label><input id="in-processo" class="input-pro" readonly></div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">BOE / VPI</label><input id="in-boe" class="input-pro" readonly></div>
+                        <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Processo</label><input id="in-processo" class="input-pro" readonly></div>
                     </div>
                     <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase">Observações</label>
-                        <textarea id="in-obs" rows="4" class="input-pro resize-none" readonly></textarea>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Observações</label>
+                        <textarea id="in-obs" rows="4" class="input-pro resize-none leading-relaxed" readonly></textarea>
                     </div>
                 </div>
             </div>
 
-            <div id="footer-actions" class="p-5 bg-white border-t border-slate-200 hidden flex-col gap-3">
-                <button onclick="salvar()" class="w-full bg-slate-900 text-white font-bold py-4 rounded shadow-lg uppercase text-xs tracking-widest">
+            <div id="footer-actions" class="p-5 bg-white border-t border-slate-200 hidden flex-col gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                <button onclick="window.salvar()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded shadow-lg transition uppercase text-xs tracking-widest active:scale-[0.98]">
                     Salvar Alterações
                 </button>
-                <button onclick="excluirVeiculo()" class="w-full bg-white border border-red-200 text-red-600 font-bold py-3 rounded uppercase text-xs tracking-widest flex items-center justify-center gap-2">
+                <button onclick="window.excluirVeiculo()" class="w-full bg-white border border-red-200 text-red-600 hover:bg-red-50 font-bold py-3 rounded transition uppercase text-xs tracking-widest flex items-center justify-center gap-2 active:scale-[0.98]">
                     <i class="ph-bold ph-trash"></i> Excluir Veículo
                 </button>
             </div>
@@ -144,79 +161,93 @@
     </div>
 
     <script>
+        // CONFIGURAÇÃO SUPABASE
         const SUPABASE_URL = 'https://newbrgjewjnebfnhumci.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ld2JyZ2pld2puZWJmbmh1bWNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1NDcyMTAsImV4cCI6MjA4MTEyMzIxMH0.Z_AE5HnKxIwNni9RXgI1aGViJX2v_4Z0Nd5uMEqIue4';
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        let CACHE = [];
-        let ATUAL = null;
-        let EDITING = false;
+        
+        // VARIÁVEIS GLOBAIS
+        window.CACHE = [];
+        window.ATUAL = null;
+        window.EDITING = false;
 
-        async function init() {
+        // 1. INICIALIZAÇÃO
+        window.init = async function() {
             try {
                 const { data, error } = await supabase.from('veiculos').select('*').order('id', { ascending: false });
                 if (error) throw error;
-                CACHE = data;
+                window.CACHE = data;
                 renderStats();
                 renderList(data);
             } catch (err) {
-                alert("Erro: " + err.message);
+                alert("Erro ao conectar: " + err.message);
+                document.getElementById('lista').innerHTML = '<p class="text-center p-10 text-red-500">Erro de conexão.</p>';
             }
         }
 
         function renderStats() {
-            document.getElementById('count-patio').innerText = CACHE.filter(v => v.status === 'No Pátio').length;
-            document.getElementById('count-liberado').innerText = CACHE.filter(v => v.status === 'Liberado').length;
+            document.getElementById('count-patio').innerText = window.CACHE.filter(v => v.status === 'No Pátio').length;
+            document.getElementById('count-liberado').innerText = window.CACHE.filter(v => v.status === 'Liberado').length;
         }
 
+        // 2. RENDERIZAÇÃO DA LISTA
         function renderList(list) {
             const el = document.getElementById('lista');
             el.innerHTML = '';
             
-            if(list.length === 0) { el.innerHTML = '<div class="text-center py-10 text-slate-400 text-sm">Nenhum registro.</div>'; return; }
+            if(list.length === 0) {
+                el.innerHTML = '<div class="text-center py-10 text-slate-400 text-sm font-bold">NENHUM REGISTRO ENCONTRADO</div>';
+                return;
+            }
 
             list.forEach(v => {
                 const isPatio = v.status === 'No Pátio';
-                const statusBadge = isPatio 
-                    ? '<span class="text-[10px] font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded uppercase">Apreendido</span>'
-                    : '<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded uppercase">Liberado</span>';
+                const statusHtml = isPatio 
+                    ? '<span class="text-[10px] font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded uppercase tracking-wide">Apreendido</span>'
+                    : '<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded uppercase tracking-wide">Liberado</span>';
                 
-                // CRIA O CARTÃO COM BOTÃO EXPLÍCITO
-                const card = document.createElement('div');
-                card.className = "bg-white p-5 rounded border border-slate-200 shadow-sm";
-                card.innerHTML = `
+                // Conversão segura do ID
+                const safeId = String(v.id);
+
+                el.innerHTML += `
+                <div class="bg-white p-5 rounded border border-slate-200 shadow-sm hover:border-blue-400 transition">
                     <div class="flex justify-between items-start mb-2">
                         <h3 class="text-xl font-black text-slate-800 font-mono tracking-wide">${v.placa}</h3>
-                        ${statusBadge}
+                        ${statusHtml}
                     </div>
+                    
                     <div class="text-sm font-bold text-slate-600 flex items-center gap-2 mb-4">
+                        <i class="ph-fill ph-car text-slate-400"></i>
                         ${v.modelo || 'MODELO N/I'}
                         <span class="text-xs font-normal text-slate-300">|</span>
                         <span class="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">${v.cor || 'COR N/I'}</span>
                     </div>
+
                     <div class="flex flex-wrap gap-2 pt-3 border-t border-slate-100 mb-4">
+                        ${v.niba ? `<span class="text-[10px] font-mono font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100">NIBA: ${v.niba}</span>` : ''}
                         ${v.boe ? `<span class="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-100">BOE: ${v.boe}</span>` : ''}
-                        ${v.niba ? `<span class="text-[10px] font-mono font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100">NIBA: ${v.niba}</span>` : ''}
                     </div>
-                    <button onclick="abrir('${v.id}')" class="w-full bg-slate-800 text-white font-bold py-3 rounded text-xs uppercase tracking-widest shadow hover:bg-slate-700 transition">
-                        VER DETALHES
+
+                    <button onclick="window.abrir('${safeId}')" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded text-xs uppercase tracking-widest shadow transition flex items-center justify-center gap-2">
+                        VER DETALHES <i class="ph-bold ph-arrow-right"></i>
                     </button>
-                `;
-                el.appendChild(card);
+                </div>`;
             });
         }
 
-        // ABRIR MODAL
+        // 3. ABRIR MODAL
         window.abrir = function(id) {
-            ATUAL = CACHE.find(v => String(v.id) === String(id));
-            if(!ATUAL) return alert("Erro: ID não encontrado.");
+            window.ATUAL = window.CACHE.find(v => String(v.id) === String(id));
+            if(!window.ATUAL) return alert("Erro interno: ID não encontrado.");
 
-            EDITING = true; toggleEdit(); // Reseta para leitura
+            window.EDITING = true; window.toggleEdit(); // Reseta para leitura
             
+            // Preenche campos
             ['placa','niba','status','modelo','marca','cor','tipo','infracao','boe','processo','obs'].forEach(k => {
                 const el = document.getElementById('in-' + k);
                 const dbKey = k === 'obs' ? 'observacoes' : k;
-                if(el) el.value = ATUAL[dbKey] || '';
+                if(el) el.value = window.ATUAL[dbKey] || '';
             });
 
             renderGaleria();
@@ -226,50 +257,65 @@
         function renderGaleria() {
             const el = document.getElementById('galeria');
             el.innerHTML = '';
-            let fotos = ATUAL.fotos || [];
-            if(fotos.length === 0 && ATUAL.foto_url) fotos = [ATUAL.foto_url];
-            ATUAL.fotos = fotos;
+            
+            let fotos = window.ATUAL.fotos || [];
+            if(fotos.length === 0 && window.ATUAL.foto_url) fotos = [window.ATUAL.foto_url];
+            window.ATUAL.fotos = fotos;
 
             if(fotos.length === 0) {
-                el.innerHTML = '<div class="text-[10px] font-bold text-slate-400 bg-slate-100 border border-dashed border-slate-300 p-4 rounded w-full text-center">SEM FOTOS</div>';
+                el.innerHTML = '<div class="text-[10px] font-bold text-slate-400 bg-slate-100 border border-dashed border-slate-300 p-4 rounded w-full text-center">SEM FOTOS REGISTRADAS</div>';
             } else {
                 fotos.forEach((url, i) => {
-                    const div = document.createElement('div');
-                    div.className = "relative w-24 h-24 bg-slate-200 rounded overflow-hidden border border-slate-300 shrink-0 shadow-sm";
-                    div.innerHTML = `
+                    el.innerHTML += `
+                    <div class="relative w-24 h-24 bg-slate-200 rounded overflow-hidden border border-slate-300 shrink-0 shadow-sm group">
                         <img src="${url}" class="w-full h-full object-cover cursor-pointer" onclick="window.open('${url}')">
-                        <button onclick="delFoto(${i})" class="btn-del-foto absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full items-center justify-center shadow z-10">
+                        <button onclick="window.delFoto(${i})" class="btn-del-foto absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full items-center justify-center shadow hover:bg-red-700 z-10 transition">
                             <i class="ph-bold ph-x text-xs"></i>
                         </button>
-                    `;
-                    el.appendChild(div);
+                    </div>`;
                 });
             }
         }
 
+        // 4. SISTEMA DE EDIÇÃO
         window.toggleEdit = function() {
-            EDITING = !EDITING;
+            window.EDITING = !window.EDITING;
             const container = document.getElementById('form-area');
             const footer = document.getElementById('footer-actions');
             const btn = document.getElementById('btn-edit');
             const inputs = container.querySelectorAll('input, select, textarea');
 
-            if(EDITING) {
+            if(window.EDITING) {
                 container.classList.add('editing');
                 footer.classList.remove('hidden');
                 footer.classList.add('flex');
                 btn.innerHTML = '<i class="ph-bold ph-x"></i> Cancelar';
-                inputs.forEach(i => { if(i.id !== 'in-placa') { i.removeAttribute('readonly'); i.removeAttribute('disabled'); } });
+                btn.classList.replace('text-blue-600', 'text-slate-600');
+                btn.classList.replace('bg-blue-50', 'bg-slate-200');
+                
+                inputs.forEach(i => {
+                    if(i.id !== 'in-placa') { 
+                        i.removeAttribute('readonly'); 
+                        i.removeAttribute('disabled'); 
+                    }
+                });
             } else {
                 container.classList.remove('editing');
                 footer.classList.add('hidden');
                 footer.classList.remove('flex');
                 btn.innerHTML = '<i class="ph-bold ph-pencil-simple"></i> Editar';
-                inputs.forEach(i => { i.setAttribute('readonly', true); if(i.tagName === 'SELECT') i.setAttribute('disabled', true); });
-                if(ATUAL) abrir(ATUAL.id); 
+                btn.classList.replace('text-slate-600', 'text-blue-600');
+                btn.classList.replace('bg-slate-200', 'bg-blue-50');
+                
+                inputs.forEach(i => {
+                    i.setAttribute('readonly', true);
+                    if(i.tagName === 'SELECT') i.setAttribute('disabled', true);
+                });
+                if(window.ATUAL) window.abrir(window.ATUAL.id); 
             }
         }
 
+        // 5. SALVAR TUDO
         window.salvar = async function() {
             const updates = {
                 niba: document.getElementById('in-niba').value,
@@ -283,62 +329,88 @@
                 processo: document.getElementById('in-processo').value,
                 observacoes: document.getElementById('in-obs').value,
             };
-            const { error } = await supabase.from('veiculos').update(updates).eq('id', ATUAL.id);
-            if(error) alert("Erro: " + error.message);
-            else { alert("Salvo!"); fecharModal(); init(); }
+
+            const { error } = await supabase.from('veiculos').update(updates).eq('id', window.ATUAL.id);
+            if(error) alert("Erro ao salvar: " + error.message);
+            else {
+                alert("Prontuário atualizado com sucesso.");
+                window.fecharModal();
+                window.init();
+            }
         }
 
+        // 6. EXCLUIR VEÍCULO
         window.excluirVeiculo = async function() {
-            if(!confirm("⚠️ TEM CERTEZA?\nIsso apagará o veículo para sempre.")) return;
-            const { error } = await supabase.from('veiculos').delete().eq('id', ATUAL.id);
-            if(error) alert("Erro: " + error.message);
-            else { alert("Excluído!"); fecharModal(); init(); }
+            if(!confirm("⚠️ AÇÃO IRREVERSÍVEL\n\nDeseja realmente excluir este veículo e todas as informações dele?")) return;
+            
+            const { error } = await supabase.from('veiculos').delete().eq('id', window.ATUAL.id);
+            if(error) alert("Erro ao excluir: " + error.message);
+            else {
+                alert("Veículo removido do sistema.");
+                window.fecharModal();
+                window.init();
+            }
         }
 
+        // 7. FOTOS
         window.uploadFoto = async function(input) {
-            if(!input.files[0] || !ATUAL) return;
+            if(!input.files[0] || !window.ATUAL) return;
             document.getElementById('msg-foto').classList.remove('hidden');
+            
             const file = input.files[0];
-            const name = `foto_${ATUAL.placa}_${Date.now()}.jpg`;
+            const name = `foto_${window.ATUAL.placa}_${Date.now()}.jpg`;
+            
             const { error } = await supabase.storage.from('patio').upload(name, file);
-            if(error) { alert("Erro Upload (Verifique se o bucket 'patio' é público)."); document.getElementById('msg-foto').classList.add('hidden'); return; }
+            if(error) { 
+                alert("Erro no Upload. Verifique se o Bucket 'patio' está criado e PÚBLICO no Supabase."); 
+                document.getElementById('msg-foto').classList.add('hidden'); 
+                return; 
+            }
+            
             const { data } = supabase.storage.from('patio').getPublicUrl(name);
-            const novasFotos = [...(ATUAL.fotos || []), data.publicUrl];
-            await supabase.from('veiculos').update({ fotos: novasFotos }).eq('id', ATUAL.id);
-            ATUAL.fotos = novasFotos;
+            const novasFotos = [...(window.ATUAL.fotos || []), data.publicUrl];
+            
+            await supabase.from('veiculos').update({ fotos: novasFotos }).eq('id', window.ATUAL.id);
+            window.ATUAL.fotos = novasFotos;
             renderGaleria();
             document.getElementById('msg-foto').classList.add('hidden');
-            if(!EDITING) document.getElementById('form-area').classList.add('editing'); 
+            
+            if(!window.EDITING) document.getElementById('form-area').classList.add('editing'); 
         }
 
         window.delFoto = async function(i) {
-            if(!confirm("Apagar foto?")) return;
-            const novasFotos = ATUAL.fotos.filter((_, idx) => idx !== i);
-            await supabase.from('veiculos').update({ fotos: novasFotos }).eq('id', ATUAL.id);
-            ATUAL.fotos = novasFotos;
+            if(!confirm("Excluir esta foto permanentemente?")) return;
+            const novasFotos = window.ATUAL.fotos.filter((_, idx) => idx !== i);
+            await supabase.from('veiculos').update({ fotos: novasFotos }).eq('id', window.ATUAL.id);
+            window.ATUAL.fotos = novasFotos;
             renderGaleria();
         }
 
+        // 8. NOVO VEÍCULO
         window.novoVeiculo = async function() {
-            const placa = prompt("Placa:");
+            const placa = prompt("Digite a PLACA do novo veículo:");
             if(!placa) return;
             const { data, error } = await supabase.from('veiculos').insert([{ placa: placa.toUpperCase(), status: 'No Pátio', fotos: [] }]).select();
-            if(error) alert("Erro: " + error.message); else { await init(); abrir(data[0].id); toggleEdit(); }
+            if(error) alert("Erro ao criar: " + error.message);
+            else { await window.init(); window.abrir(data[0].id); window.toggleEdit(); }
         }
 
         window.fecharModal = function() { document.getElementById('modal').classList.add('hidden'); }
+        
         window.filtrar = function() {
             const t = document.getElementById('busca').value.toLowerCase();
-            document.querySelectorAll('#lista > div').forEach((el, i) => {
-                const v = CACHE[i];
+            const items = document.querySelectorAll('#lista > div');
+            items.forEach((el, i) => {
+                const v = window.CACHE[i];
                 if(v) {
-                    const txt = (v.placa + v.modelo + v.niba).toLowerCase();
+                    const txt = (v.placa + v.modelo + v.niba + v.boe + v.processo).toLowerCase();
                     el.style.display = txt.includes(t) ? 'block' : 'none';
                 }
             });
         }
 
-        init();
+        // INICIAR
+        window.init();
     </script>
 </body>
 </html>
