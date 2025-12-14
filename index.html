@@ -3,28 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SGP - Painel de Controle</title>
+    <title>SGP - Sistema Policial</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     
     <style>
         body { background-color: #f8fafc; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .no-scroll::-webkit-scrollbar { display: none; }
         #corpo-site { opacity: 0; transition: opacity 0.5s; }
-        
         .modal-up { animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        
         .input-box { width: 100%; background: transparent; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; font-size: 0.95rem; color: #1e293b; font-weight: 500; }
         .input-box:read-only { background-color: #f1f5f9; border-color: transparent; color: #64748b; }
         .editing .input-box { background-color: #fff; border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
         .btn-trash { display: none !important; }
         .editing .btn-trash { display: flex !important; }
+        .filter-btn.active { background-color: #1e293b; color: white; border-color: #1e293b; }
     </style>
 </head>
 <body class="text-slate-800 pb-32" id="corpo-site">
@@ -35,17 +33,17 @@
                 <div class="bg-white/10 p-2 rounded-lg"><i class="ph-bold ph-police-car text-xl text-blue-400"></i></div>
                 <div>
                     <h1 class="text-sm font-black tracking-widest uppercase">Pátio 116ª DP</h1>
-                    <p class="text-[10px] text-slate-400 font-medium">Sistema Integrado</p>
+                    <p class="text-[10px] text-slate-400 font-medium">Sistema Web</p>
                 </div>
             </div>
             <div class="flex gap-2">
-                <button onclick="baixarExcelAvancado()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded text-xs font-bold shadow-lg flex items-center gap-2 border border-emerald-500 transition active:scale-95">
-                    <i class="ph-bold ph-microsoft-excel text-lg"></i> <span class="hidden sm:inline">Relatório</span>
+                <button onclick="baixarBackup()" class="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-lg text-xs font-bold border border-slate-600 transition" title="Backup">
+                    <i class="ph-bold ph-download-simple text-lg"></i>
                 </button>
-                <button id="btn-novo" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-bold uppercase shadow-lg flex items-center gap-2 transition active:scale-95">
+                <button id="btn-novo" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold uppercase shadow-lg flex items-center gap-2 transition active:scale-95">
                     <i class="ph-bold ph-plus text-lg"></i> <span class="hidden sm:inline">Novo</span>
                 </button>
-                <button onclick="window.sair()" class="bg-red-900/50 hover:bg-red-800 text-white p-2 rounded text-xs font-bold border border-red-900 ml-1 transition">
+                <button onclick="window.sair()" class="bg-red-900/50 hover:bg-red-800 text-white p-2 rounded-lg text-xs font-bold border border-red-900 ml-1 transition">
                     <i class="ph-bold ph-sign-out text-lg"></i>
                 </button>
             </div>
@@ -55,42 +53,41 @@
     <main class="max-w-4xl mx-auto p-4">
         
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Total Geral</p>
                 <p class="text-2xl font-black text-slate-800 mt-1" id="stat-total">-</p>
-                <div class="absolute right-0 top-0 p-3 opacity-10"><i class="ph-fill ph-database text-4xl text-slate-800"></i></div>
             </div>
-
             <div class="bg-white p-4 rounded-xl border-l-4 border-red-500 shadow-sm relative overflow-hidden">
                 <p class="text-[10px] font-bold text-red-500 uppercase tracking-wide">No Pátio</p>
                 <p class="text-2xl font-black text-slate-800 mt-1" id="stat-patio">-</p>
-                <div class="absolute right-0 top-0 p-3 opacity-10"><i class="ph-fill ph-lock-key text-4xl text-red-600"></i></div>
             </div>
-
             <div class="bg-white p-4 rounded-xl border-l-4 border-emerald-500 shadow-sm relative overflow-hidden">
                 <p class="text-[10px] font-bold text-emerald-600 uppercase tracking-wide">Liberados</p>
                 <p class="text-2xl font-black text-slate-800 mt-1" id="stat-liberado">-</p>
-                <div class="absolute right-0 top-0 p-3 opacity-10"><i class="ph-fill ph-check-circle text-4xl text-emerald-600"></i></div>
             </div>
-
             <div class="bg-white p-4 rounded-xl border-l-4 border-yellow-400 shadow-sm relative overflow-hidden">
                 <p class="text-[10px] font-bold text-yellow-600 uppercase tracking-wide">Auditados</p>
                 <div class="flex items-baseline gap-1 mt-1">
                     <span class="text-2xl font-black text-slate-800" id="stat-audit">-</span>
                     <span class="text-xs font-bold text-slate-400" id="stat-audit-perc">%</span>
                 </div>
-                <div class="absolute right-0 top-0 p-3 opacity-10"><i class="ph-fill ph-clipboard-text text-4xl text-yellow-500"></i></div>
             </div>
+        </div>
+
+        <div class="flex gap-2 mb-4 overflow-x-auto pb-2 no-scroll">
+            <button onclick="filtrarStatus('todos')" id="btn-filtro-todos" class="filter-btn active px-4 py-2 rounded-full text-xs font-bold uppercase border border-slate-300 bg-white text-slate-600 whitespace-nowrap transition shadow-sm">Todos</button>
+            <button onclick="filtrarStatus('patio')" id="btn-filtro-patio" class="filter-btn px-4 py-2 rounded-full text-xs font-bold uppercase border border-red-200 bg-red-50 text-red-600 whitespace-nowrap transition shadow-sm">🔒 Só Apreendidos</button>
+            <button onclick="filtrarStatus('liberado')" id="btn-filtro-liberado" class="filter-btn px-4 py-2 rounded-full text-xs font-bold uppercase border border-emerald-200 bg-emerald-50 text-emerald-600 whitespace-nowrap transition shadow-sm">✅ Só Liberados</button>
+            <button onclick="filtrarStatus('pendente')" id="btn-filtro-pendente" class="filter-btn px-4 py-2 rounded-full text-xs font-bold uppercase border border-yellow-200 bg-yellow-50 text-yellow-600 whitespace-nowrap transition shadow-sm">⚠️ Falta Auditar</button>
         </div>
 
         <div class="relative mb-6 group">
             <i class="ph-bold ph-magnifying-glass absolute left-4 top-3.5 text-slate-400 group-focus-within:text-blue-600 transition"></i>
-            <input type="text" id="campo-busca" class="w-full pl-11 pr-4 py-3 bg-white border-none rounded-xl shadow-sm outline-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-medium placeholder:text-slate-400 transition" placeholder="Pesquisar por Placa, BOE, Modelo...">
+            <input type="text" id="campo-busca" class="w-full pl-11 pr-4 py-3 bg-white border-none rounded-xl shadow-sm outline-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-medium placeholder:text-slate-400 transition" placeholder="Pesquisar Placa, BOE, Modelo...">
         </div>
 
         <div id="lista-container" class="space-y-3 pb-10">
-            <div class="text-center py-10 text-slate-400 text-xs font-bold uppercase animate-pulse">Sincronizando dados...</div>
+            <div class="text-center py-10 text-slate-400 text-xs font-bold uppercase animate-pulse">Iniciando sistema...</div>
         </div>
     </main>
 
@@ -100,7 +97,10 @@
             
             <div class="bg-white px-5 py-3 border-b border-slate-200 flex justify-between items-center sticky top-0 z-10 shadow-sm">
                 <button id="btn-fechar" class="text-slate-400 hover:text-slate-700 p-2 rounded-full hover:bg-slate-100 transition"><i class="ph-bold ph-x text-xl"></i></button>
-                <span class="text-xs font-black text-slate-500 uppercase tracking-widest">PRONTUÁRIO DIGITAL</span>
+                <div class="text-center">
+                    <span class="text-xs font-black text-slate-500 uppercase tracking-widest block">PRONTUÁRIO</span>
+                    <button onclick="baixarExcelAvancado()" class="text-[10px] text-emerald-600 font-bold hover:underline flex items-center justify-center gap-1"><i class="ph-bold ph-file-xls"></i> Exportar este Relatório</button>
+                </div>
                 <button id="btn-editar" class="text-blue-600 bg-blue-50 border border-blue-100 px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-2 active:scale-95 transition hover:bg-blue-100">
                     <i class="ph-bold ph-pencil-simple"></i> Editar
                 </button>
@@ -111,12 +111,12 @@
                 
                 <div class="bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
                     <button onclick="alternarConferencia()" id="btn-auditoria" class="w-full py-4 rounded-lg font-bold uppercase text-xs tracking-widest flex items-center justify-center gap-3 transition active:scale-[0.98]">
-                        </button>
+                    </button>
                 </div>
 
                 <div class="space-y-2">
                     <div class="flex justify-between items-end px-1">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Registro Fotográfico</label>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Fotos</label>
                         <label class="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase cursor-pointer flex items-center gap-2 shadow hover:bg-slate-800 transition active:scale-95">
                             <i class="ph-bold ph-camera text-lg"></i> Adicionar
                             <input type="file" id="input-camera" accept="image/*" class="hidden">
@@ -135,34 +135,29 @@
                     <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Status Atual</label><select id="in-status" class="input-box font-bold bg-slate-100 border-transparent text-slate-700" disabled><option value="No Pátio">🔒 APREENDIDO (NO PÁTIO)</option><option value="Liberado">✅ LIBERADO / ENTREGUE</option></select></div>
                 </div>
 
-                <div class="space-y-4">
-                    <h3 class="text-xs font-bold text-slate-900 uppercase border-b border-slate-200 pb-2 px-1">Dados do Veículo</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Modelo</label><input id="in-modelo" class="input-box" readonly></div>
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Marca</label><input id="in-marca" class="input-box" readonly></div>
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Cor</label><input id="in-cor" class="input-box" readonly></div>
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Tipo</label><input id="in-tipo" class="input-box" readonly></div>
-                    </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Modelo</label><input id="in-modelo" class="input-box" readonly></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Marca</label><input id="in-marca" class="input-box" readonly></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Cor</label><input id="in-cor" class="input-box" readonly></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Tipo</label><input id="in-tipo" class="input-box" readonly></div>
                 </div>
 
-                <div class="space-y-4">
-                    <h3 class="text-xs font-bold text-slate-900 uppercase border-b border-slate-200 pb-2 px-1">Dados Legais</h3>
-                    <div class="bg-red-50 p-3 rounded-lg border border-red-100"><label class="text-[10px] font-bold text-red-400 uppercase block mb-1">Infração Penal</label><input id="in-infracao" class="input-box text-red-700 font-bold bg-transparent border-none p-0 uppercase" readonly></div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">BOE</label><input id="in-boe" class="input-box" readonly></div>
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Processo / VPI</label><input id="in-processo" class="input-box" readonly></div>
-                    </div>
-                    <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Observações e Histórico</label><textarea id="in-obs" rows="5" class="input-box resize-none leading-relaxed" readonly></textarea></div>
+                <div class="bg-red-50 p-3 rounded-lg border border-red-100"><label class="text-[10px] font-bold text-red-400 uppercase block mb-1">Infração Penal</label><input id="in-infracao" class="input-box text-red-700 font-bold bg-transparent border-none p-0 uppercase" readonly></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1">BOE</label><input id="in-boe" class="input-box" readonly></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Processo / VPI</label><input id="in-processo" class="input-box" readonly></div>
+                </div>
+                <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Observações e Histórico</label><textarea id="in-obs" rows="5" class="input-box resize-none leading-relaxed" readonly></textarea></div>
+                
+                <div class="border-t border-slate-200 pt-4 mt-4">
+                    <button onclick="verHistorico()" class="text-xs text-blue-600 font-bold hover:underline flex items-center gap-1"><i class="ph-bold ph-clock-counter-clockwise"></i> Ver Histórico de Alterações</button>
+                    <div id="lista-historico" class="hidden mt-3 space-y-2 text-[10px] text-slate-500 bg-slate-100 p-3 rounded-lg"></div>
                 </div>
             </div>
 
             <div id="barra-acoes" class="p-5 bg-white border-t border-slate-200 hidden flex-col gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-                <button id="btn-salvar" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-lg shadow-lg uppercase text-xs tracking-widest active:scale-[0.98] transition flex justify-center gap-2 items-center">
-                    <i class="ph-bold ph-floppy-disk text-lg"></i> SALVAR ALTERAÇÕES
-                </button>
-                <button id="btn-excluir-veiculo" class="w-full bg-white border border-red-200 text-red-600 hover:bg-red-50 font-bold py-3 rounded-lg uppercase text-xs tracking-widest flex items-center justify-center gap-2 active:scale-[0.98] transition">
-                    <i class="ph-bold ph-trash text-lg"></i> EXCLUIR REGISTRO
-                </button>
+                <button id="btn-salvar" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-lg shadow-lg uppercase text-xs tracking-widest active:scale-[0.98] transition flex justify-center gap-2 items-center"><i class="ph-bold ph-floppy-disk text-lg"></i> SALVAR ALTERAÇÕES</button>
+                <button id="btn-excluir-veiculo" class="w-full bg-white border border-red-200 text-red-600 hover:bg-red-50 font-bold py-3 rounded-lg uppercase text-xs tracking-widest flex items-center justify-center gap-2 active:scale-[0.98] transition"><i class="ph-bold ph-trash text-lg"></i> EXCLUIR REGISTRO</button>
             </div>
         </div>
     </div>
@@ -175,21 +170,104 @@
         let CACHE = [];
         let ATUAL = null;
         let EDITING = false;
+        let FILTRO_ATUAL = 'todos';
+        let USUARIO_EMAIL = '';
 
         async function verificarSeguranca() {
-            const { data } = await supabase.auth.getSession();
-            if (!data.session) window.location.href = 'login.html';
-            else { document.getElementById('corpo-site').style.opacity = '1'; carregarDados(); }
+            try {
+                const { data, error } = await supabase.auth.getSession();
+                if (error || !data.session) {
+                    window.location.href = 'login.html';
+                } else { 
+                    USUARIO_EMAIL = data.session.user.email;
+                    document.getElementById('corpo-site').style.opacity = '1'; 
+                    carregarDados(); 
+                }
+            } catch (err) {
+                alert("Erro de autenticação. Faça login novamente.");
+                window.location.href = 'login.html';
+            }
         }
         window.sair = async () => { await supabase.auth.signOut(); window.location.href = 'login.html'; }
 
-        // --- SISTEMA DE AUDITORIA ---
+        async function registrarHistorico(acao, detalhes) {
+            if(!ATUAL) return;
+            // Tenta salvar, se der erro apenas ignora pra não travar o app
+            try {
+                await supabase.from('historico').insert([{ acao: acao, placa: ATUAL.placa, usuario: USUARIO_EMAIL, detalhes: detalhes }]);
+            } catch (e) { console.warn("Erro ao salvar histórico", e); }
+        }
+
+        window.verHistorico = async function() {
+            const el = document.getElementById('lista-historico');
+            if(!el.classList.contains('hidden')) { el.classList.add('hidden'); return; }
+            el.innerHTML = 'Carregando...'; el.classList.remove('hidden');
+            const { data, error } = await supabase.from('historico').select('*').eq('placa', ATUAL.placa).order('data_hora', { ascending: false }).limit(10);
+            
+            if(error) { el.innerHTML = "Erro ao carregar histórico. Verifique se a tabela foi criada no Supabase."; return; }
+            
+            if(!data || data.length === 0) el.innerHTML = 'Nenhum histórico recente.';
+            else el.innerHTML = data.map(h => `<div class="border-b border-slate-200 pb-1 last:border-0"><p class="font-bold text-slate-700">${h.acao} - ${new Date(h.data_hora).toLocaleString('pt-BR')}</p><p>${h.usuario}</p><p class="text-slate-400 italic">${h.detalhes}</p></div>`).join('');
+        }
+
+        window.filtrarStatus = function(tipo) {
+            FILTRO_ATUAL = tipo;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-filtro-${tipo}`).classList.add('active');
+            aplicarFiltros();
+        }
+
+        function aplicarFiltros() {
+            const termo = document.getElementById('campo-busca').value.toLowerCase();
+            const filtrados = CACHE.filter(v => {
+                const matchTexto = (v.placa+v.modelo+v.niba+v.boe).toLowerCase().includes(termo);
+                let matchStatus = true;
+                if (FILTRO_ATUAL === 'patio') matchStatus = (v.status === 'No Pátio');
+                if (FILTRO_ATUAL === 'liberado') matchStatus = (v.status === 'Liberado');
+                if (FILTRO_ATUAL === 'pendente') matchStatus = (v.status === 'No Pátio' && !v.verificado);
+                return matchTexto && matchStatus;
+            });
+            desenharLista(filtrados);
+        }
+
+        window.baixarBackup = async function() {
+            if(!confirm("Fazer Backup Completo (Veículos + Histórico)?")) return;
+            const { data } = await supabase.from('veiculos').select('*');
+            const wsVeiculos = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, wsVeiculos, "Veiculos");
+            
+            const { data: hist } = await supabase.from('historico').select('*');
+            if(hist && hist.length > 0) {
+                const wsHist = XLSX.utils.json_to_sheet(hist);
+                XLSX.utils.book_append_sheet(wb, wsHist, "Historico_Acoes");
+            }
+            XLSX.writeFile(wb, `BACKUP_SGP_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        window.baixarExcelAvancado = async function() {
+            if(!confirm("Baixar relatório Excel limpo?")) return;
+            const { data } = await supabase.from('veiculos').select('*');
+            const dadosLimpos = data.map(v => {
+                let obs = (v.observacoes || "").toUpperCase();
+                let placaFinal = v.placa;
+                const matchPlaca = obs.match(/PLACA\s*:?\s*([A-Z]{3}[0-9][0-9A-Z][0-9]{2})/);
+                if (matchPlaca && (!placaFinal || placaFinal.length < 7)) placaFinal = matchPlaca[1];
+                return { "AUDITORIA": v.verificado ? "✅" : "❌", "PLACA": placaFinal, "STATUS": v.status, "MODELO": v.modelo, "MARCA": v.marca, "COR": v.cor, "BOE": v.boe, "PROC": v.processo, "OBS": obs };
+            });
+            const ws = XLSX.utils.json_to_sheet(dadosLimpos);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Relatorio");
+            XLSX.writeFile(wb, "Relatorio_Patio.xlsx");
+        }
+
         async function alternarConferencia() {
             if(!ATUAL) return;
             ATUAL.verificado = !ATUAL.verificado;
             renderBotaoAuditoria();
             await supabase.from('veiculos').update({ verificado: ATUAL.verificado }).eq('id', ATUAL.id);
-            carregarDados(); // Atualiza dashboard
+            registrarHistorico('Auditoria', `Marcou como ${ATUAL.verificado ? 'Conferido' : 'Pendente'}`);
+            carregarDados();
         }
 
         function renderBotaoAuditoria() {
@@ -203,47 +281,20 @@
             }
         }
 
-        // --- EXPORTAÇÃO EXCEL ---
-        window.baixarExcelAvancado = async function() {
-            if(!confirm("Baixar relatório completo em Excel?")) return;
-            const { data } = await supabase.from('veiculos').select('*');
-            const dadosLimpos = data.map(v => {
-                let obs = (v.observacoes || "").toUpperCase();
-                let placaFinal = v.placa;
-                const matchPlaca = obs.match(/PLACA\s*:?\s*([A-Z]{3}[0-9][0-9A-Z][0-9]{2})/);
-                if (matchPlaca && (!placaFinal || placaFinal.length < 7)) placaFinal = matchPlaca[1];
-
-                return {
-                    "AUDITORIA": v.verificado ? "✅ CONFERIDO" : "❌ PENDENTE",
-                    "PLACA": placaFinal,
-                    "STATUS": v.status,
-                    "MODELO": v.modelo,
-                    "MARCA": v.marca,
-                    "COR": v.cor,
-                    "BOE": v.boe || "N/I",
-                    "PROCESSO": v.processo || "N/I",
-                    "INFRAÇÃO": v.infracao,
-                    "OBSERVAÇÕES": obs
-                };
-            });
-            const ws = XLSX.utils.json_to_sheet(dadosLimpos);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Relatorio_Geral");
-            XLSX.writeFile(wb, "Relatorio_Patio_116DP.xlsx");
-        }
-
-        // --- DADOS E INTERFACE ---
         async function carregarDados() {
             try {
                 const { data, error } = await supabase.from('veiculos').select('*').order('id', { ascending: false });
-                if (error) throw error;
+                if (error) {
+                    // SE DER ERRO AQUI É PORQUE A TABELA NAO EXISTE
+                    alert("Erro ao carregar dados. Verifique se a tabela 'historico' foi criada no Supabase.");
+                    throw error;
+                }
                 CACHE = data;
                 
-                // ATUALIZA PLACAR
                 const total = CACHE.length;
                 const patio = CACHE.filter(v => v.status === 'No Pátio').length;
                 const liberado = CACHE.filter(v => v.status === 'Liberado').length;
-                const conferido = CACHE.filter(v => v.verificado && v.status === 'No Pátio').length; // Só conta auditado se estiver no pátio
+                const conferido = CACHE.filter(v => v.verificado && v.status === 'No Pátio').length;
                 const perc = patio > 0 ? Math.round((conferido / patio) * 100) : 0;
 
                 document.getElementById('stat-total').innerText = total;
@@ -252,8 +303,11 @@
                 document.getElementById('stat-audit').innerText = conferido + ` / ${patio}`;
                 document.getElementById('stat-audit-perc').innerText = `(${perc}%)`;
 
-                desenharLista(data);
-            } catch (erro) { console.error(erro); }
+                aplicarFiltros();
+            } catch (erro) { 
+                console.error(erro); 
+                document.getElementById('lista-container').innerHTML = '<div class="text-center p-10 font-bold text-red-500">Erro de conexão com o banco de dados.</div>';
+            }
         }
 
         function desenharLista(lista) {
@@ -264,8 +318,6 @@
             lista.forEach(v => {
                 const card = document.createElement('div');
                 const isPatio = v.status === 'No Pátio';
-                
-                // Estilo Dinâmico (Se auditado, fica verde na borda)
                 let borda = isPatio ? (v.verificado ? 'border-emerald-500 border-l-4' : 'border-slate-200') : 'border-slate-200 border-l-4 border-l-slate-300 opacity-75';
                 let selo = v.verificado && isPatio ? '<div class="absolute right-0 top-0 bg-emerald-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-bl-lg"><i class="ph-bold ph-check"></i> OK</div>' : '';
 
@@ -277,22 +329,15 @@
                         ${isPatio ? '<span class="text-[9px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100 uppercase">Pátio</span>' : '<span class="text-[9px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 uppercase">Liberado</span>'}
                     </div>
                     <div class="text-xs font-bold text-slate-500 flex items-center gap-2 mb-3">
-                        ${v.modelo || 'MODELO N/I'}
-                        <span class="text-[9px] text-slate-300">|</span>
-                        <span class="bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">${v.cor || 'COR N/I'}</span>
+                        ${v.modelo || 'MODELO N/I'}<span class="text-[9px] text-slate-300">|</span><span class="bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">${v.cor || 'COR N/I'}</span>
                     </div>
-                    <div class="flex gap-2 pt-3 border-t border-slate-50">
-                        ${v.boe ? `<span class="text-[9px] font-bold text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded">BOE: ${v.boe}</span>` : ''}
-                        ${v.niba ? `<span class="text-[9px] font-bold text-blue-400 bg-blue-50 px-1.5 py-0.5 rounded">NIBA: ${v.niba}</span>` : ''}
-                    </div>
-                    <button class="absolute inset-0 w-full h-full opacity-0 btn-ver"></button>
-                `;
+                    <div class="flex gap-2 pt-3 border-t border-slate-50">${v.boe ? `<span class="text-[9px] font-bold text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded">BOE: ${v.boe}</span>` : ''}</div>
+                    <button class="absolute inset-0 w-full h-full opacity-0 btn-ver"></button>`;
                 card.querySelector('.btn-ver').addEventListener('click', () => abrirModal(v));
                 container.appendChild(card);
             });
         }
 
-        // --- FUNÇÕES DE APOIO ---
         function abrirModal(v) {
             ATUAL = v; EDITING = false; atualizarModoEdicao(); renderBotaoAuditoria();
             ['placa','niba','status','modelo','marca','cor','tipo','infracao','boe','processo','obs'].forEach(k => {
@@ -300,7 +345,9 @@
                 const key = k === 'obs' ? 'observacoes' : k;
                 if(el) el.value = ATUAL[key] || '';
             });
-            renderGaleria(); document.getElementById('modal').classList.remove('hidden');
+            renderGaleria();
+            document.getElementById('lista-historico').classList.add('hidden');
+            document.getElementById('modal').classList.remove('hidden');
         }
 
         function renderGaleria() {
@@ -345,13 +392,19 @@
                 infracao: document.getElementById('in-infracao').value, boe: document.getElementById('in-boe').value, processo: document.getElementById('in-processo').value, observacoes: document.getElementById('in-obs').value
             };
             const { error } = await supabase.from('veiculos').update(up).eq('id', ATUAL.id);
-            if(error) alert("Erro: " + error.message); else { alert("Salvo!"); document.getElementById('modal').classList.add('hidden'); carregarDados(); }
+            if(error) alert("Erro: " + error.message); else { 
+                registrarHistorico('Edição', 'Atualizou dados do veículo');
+                alert("Salvo!"); document.getElementById('modal').classList.add('hidden'); carregarDados(); 
+            }
         }
 
         document.getElementById('btn-excluir-veiculo').onclick = async () => {
             if(!confirm("⚠️ EXCLUIR REGISTRO?\nEsta ação não pode ser desfeita.")) return;
             const { error } = await supabase.from('veiculos').delete().eq('id', ATUAL.id);
-            if(error) alert("Erro: " + error.message); else { alert("Excluído!"); document.getElementById('modal').classList.add('hidden'); carregarDados(); }
+            if(error) alert("Erro: " + error.message); else { 
+                registrarHistorico('Exclusão', `Excluiu veículo placa ${ATUAL.placa}`);
+                alert("Excluído!"); document.getElementById('modal').classList.add('hidden'); carregarDados(); 
+            }
         }
 
         document.getElementById('input-camera').onchange = async (e) => {
@@ -364,6 +417,7 @@
             const { data } = supabase.storage.from('patio').getPublicUrl(name);
             const novas = [...(ATUAL.fotos||[]), data.publicUrl];
             await supabase.from('veiculos').update({ fotos: novas }).eq('id', ATUAL.id);
+            registrarHistorico('Foto', 'Adicionou nova foto');
             ATUAL.fotos = novas; renderGaleria();
             document.getElementById('status-upload').classList.add('hidden');
         }
@@ -372,20 +426,21 @@
             if(!confirm("Apagar foto?")) return;
             const novas = ATUAL.fotos.filter((_, idx) => idx !== i);
             await supabase.from('veiculos').update({ fotos: novas }).eq('id', ATUAL.id);
+            registrarHistorico('Foto', 'Excluiu uma foto');
             ATUAL.fotos = novas; renderGaleria();
         }
 
         document.getElementById('btn-novo').onclick = async () => {
             const p = prompt("Placa do novo veículo:"); if(!p) return;
             const { data, error } = await supabase.from('veiculos').insert([{ placa: p.toUpperCase(), status: 'No Pátio', fotos: [] }]).select();
-            if(error) alert("Erro: " + error.message); else { await carregarDados(); abrirModal(data[0]); EDITING=true; atualizarModoEdicao(); }
+            if(error) alert("Erro: " + error.message); else { 
+                const novoCarro = data[0];
+                await supabase.from('historico').insert([{ acao: 'Criação', placa: p.toUpperCase(), usuario: USUARIO_EMAIL, detalhes: 'Criou novo veículo' }]);
+                await carregarDados(); abrirModal(novoCarro); EDITING=true; atualizarModoEdicao(); 
+            }
         }
 
-        document.getElementById('campo-busca').onkeyup = (e) => {
-            const t = e.target.value.toLowerCase();
-            const f = CACHE.filter(v => (v.placa+v.modelo+v.niba+v.boe).toLowerCase().includes(t));
-            desenharLista(f);
-        }
+        document.getElementById('campo-busca').onkeyup = (e) => { aplicarFiltros(); }
 
         verificarSeguranca();
     </script>
