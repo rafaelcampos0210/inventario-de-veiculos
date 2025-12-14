@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acesso Restrito - SGP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-slate-900 h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white w-full max-w-sm p-8 rounded-2xl shadow-2xl border-t-4 border-blue-600">
+        <div class="text-center mb-8">
+            <div class="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+            </div>
+            <h1 class="text-2xl font-black text-slate-800 uppercase tracking-widest">Área Restrita</h1>
+            <p class="text-xs text-slate-500 font-bold mt-1">SISTEMA DE GESTÃO DE PÁTIO</p>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">E-mail</label>
+                <input type="email" id="email" class="w-full border border-slate-300 p-3 rounded-lg focus:outline-none focus:border-blue-600 outline-none font-bold text-slate-700 transition" placeholder="Digite seu e-mail">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Senha</label>
+                <input type="password" id="senha" class="w-full border border-slate-300 p-3 rounded-lg focus:outline-none focus:border-blue-600 outline-none font-bold text-slate-700 transition" placeholder="••••••••">
+            </div>
+            
+            <button onclick="entrar()" id="btn-entrar" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-lg shadow-lg transition active:scale-95 uppercase text-xs tracking-widest mt-2">
+                ACESSAR SISTEMA
+            </button>
+            
+            <p id="msg-erro" class="text-red-600 text-xs font-bold text-center hidden bg-red-50 p-2 rounded border border-red-100"></p>
+        </div>
+        
+        <p class="text-center text-[10px] text-slate-400 mt-6 uppercase font-bold">Uso exclusivo autorizado</p>
+    </div>
+
+    <script>
+        // SUAS CHAVES (JÁ CONFIGURADAS)
+        const SUPABASE_URL = 'https://newbrgjewjnebfnhumci.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ld2JyZ2pld2puZWJmbmh1bWNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1NDcyMTAsImV4cCI6MjA4MTEyMzIxMH0.Z_AE5HnKxIwNni9RXgI1aGViJX2v_4Z0Nd5uMEqIue4';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Se já estiver logado, joga direto pro sistema
+        async function checarLogin() {
+            const { data } = await supabase.auth.getSession();
+            if (data.session) {
+                window.location.href = 'index.html';
+            }
+        }
+        checarLogin();
+
+        async function entrar() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('senha').value;
+            const btn = document.getElementById('btn-entrar');
+            const msg = document.getElementById('msg-erro');
+
+            if (!email || !password) {
+                msg.innerText = "Preencha e-mail e senha!";
+                msg.classList.remove('hidden');
+                return;
+            }
+
+            btn.innerText = "VERIFICANDO...";
+            btn.disabled = true;
+            msg.classList.add('hidden');
+
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                console.error("Erro login:", error);
+                msg.innerText = "Acesso Negado: E-mail ou senha incorretos.";
+                msg.classList.remove('hidden');
+                btn.innerText = "ACESSAR SISTEMA";
+                btn.disabled = false;
+            } else {
+                console.log("Login sucesso!");
+                window.location.href = 'index.html'; 
+            }
+        }
+    </script>
+</body>
+</html>
