@@ -8,16 +8,16 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     
     <style>
         body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .no-scroll::-webkit-scrollbar { display: none; }
-        
-        /* Oculta o site até verificar a senha */
         #corpo-site { opacity: 0; transition: opacity 0.5s; }
-
-        /* Animações e Estilos */
+        
+        /* Modal Animation */
         .modal-up { animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         
@@ -25,7 +25,6 @@
         .input-box:read-only { background-color: #f8fafc; border-color: transparent; color: #64748b; }
         .editing .input-box { background-color: #fff; border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
         
-        /* Botões visíveis apenas na edição */
         .btn-trash { display: none !important; }
         .editing .btn-trash { display: flex !important; }
     </style>
@@ -42,10 +41,15 @@
                 </div>
             </div>
             <div class="flex gap-2">
-                <button id="btn-novo" class="bg-blue-600 active:bg-blue-700 text-white px-3 py-2 rounded text-xs font-bold uppercase shadow-lg flex items-center gap-2 transition transform active:scale-95">
+                <button onclick="baixarExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-xs font-bold transition border border-emerald-700 shadow-lg flex items-center gap-1" title="Baixar Planilha">
+                    <i class="ph-bold ph-file-xls text-lg"></i> <span class="hidden sm:inline">Excel</span>
+                </button>
+
+                <button id="btn-novo" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded text-xs font-bold uppercase shadow-lg flex items-center gap-2 transition active:scale-95">
                     <i class="ph-bold ph-plus"></i> Novo
                 </button>
-                <button onclick="window.sair()" class="bg-red-900/50 hover:bg-red-800 text-white p-2 rounded text-xs font-bold transition border border-red-900 ml-2" title="Sair do Sistema">
+                
+                <button onclick="window.sair()" class="bg-red-900/50 hover:bg-red-800 text-white p-2 rounded text-xs font-bold transition border border-red-900 ml-1" title="Sair">
                     <i class="ph-bold ph-sign-out text-lg"></i>
                 </button>
             </div>
@@ -69,7 +73,7 @@
         </div>
 
         <div id="lista-container" class="space-y-4">
-            <div class="text-center py-10 text-slate-400 text-xs font-bold uppercase animate-pulse">Verificando Permissão...</div>
+            <div class="text-center py-10 text-slate-400 text-xs font-bold uppercase animate-pulse">Carregando...</div>
         </div>
     </main>
 
@@ -155,26 +159,51 @@
         let ATUAL = null;
         let EDITING = false;
 
-        // --- 1. SEGURANÇA (O GUARDA NA PORTA) ---
+        // 1. SEGURANÇA
         async function verificarSeguranca() {
             const { data } = await supabase.auth.getSession();
-            if (!data.session) {
-                // Se não tiver crachá, joga para o login
-                window.location.href = 'login.html';
-            } else {
-                // Se tiver, mostra o site e carrega os dados
+            if (!data.session) window.location.href = 'login.html';
+            else {
                 document.getElementById('corpo-site').style.opacity = '1';
                 carregarDados();
             }
         }
 
-        // Função do botão Sair
-        window.sair = async function() {
-            await supabase.auth.signOut();
-            window.location.href = 'login.html';
+        window.sair = async () => { await supabase.auth.signOut(); window.location.href = 'login.html'; }
+
+        // 2. EXPORTAR EXCEL (NOVO)
+        window.baixarExcel = async function() {
+            if(!confirm("Deseja baixar a planilha completa com todos os veículos?")) return;
+            
+            // Busca dados frescos do banco
+            const { data, error } = await supabase.from('veiculos').select('*');
+            if(error) return alert("Erro ao baixar dados: " + error.message);
+
+            // Formata para ficar bonito no Excel
+            const dadosFormatados = data.map(v => ({
+                "PLACA": v.placa,
+                "STATUS": v.status,
+                "MODELO": v.modelo,
+                "MARCA": v.marca,
+                "COR": v.cor,
+                "NIBA": v.niba,
+                "BOE": v.boe,
+                "PROCESSO": v.processo,
+                "INFRAÇÃO": v.infracao,
+                "OBSERVAÇÕES": v.observacoes,
+                "ID_SISTEMA": v.id
+            }));
+
+            // Cria a planilha usando a biblioteca SheetJS
+            const ws = XLSX.utils.json_to_sheet(dadosFormatados);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Veiculos_Patio_116DP");
+            
+            // Download
+            XLSX.writeFile(wb, "Patio_116DP_Completo.xlsx");
         }
 
-        // --- 2. SISTEMA (A LISTA DE VEÍCULOS) ---
+        // 3. CARREGAR DADOS
         async function carregarDados() {
             try {
                 const { data, error } = await supabase.from('veiculos').select('*').order('id', { ascending: false });
@@ -184,7 +213,7 @@
                 document.getElementById('stat-liberado').innerText = CACHE.filter(v => v.status === 'Liberado').length;
                 desenharLista(data);
             } catch (erro) {
-                document.getElementById('lista-container').innerHTML = '<p class="text-center text-red-500 font-bold p-10">Falha na conexão.</p>';
+                document.getElementById('lista-container').innerHTML = '<p class="text-center text-red-500 font-bold p-10">Falha ao carregar dados.</p>';
             }
         }
 
@@ -206,13 +235,12 @@
                     <div class="flex flex-wrap gap-2 pt-3 border-t border-slate-100 mb-4">${v.boe ? `<span class="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-100">BOE: ${v.boe}</span>` : ''}</div>
                     <button class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded text-xs uppercase tracking-widest shadow transition btn-ver">VER DETALHES</button>`;
                 
-                // Evento de Clique "Blindado"
                 card.querySelector('.btn-ver').addEventListener('click', () => abrirModal(v));
                 container.appendChild(card);
             });
         }
 
-        // --- 3. MODAL (A FICHA) ---
+        // 4. MODAL E EDIÇÃO
         function abrirModal(v) {
             ATUAL = v;
             EDITING = false;
@@ -243,7 +271,6 @@
             });
         }
 
-        // --- 4. EDIÇÃO E BOTÕES ---
         function atualizarModoEdicao() {
             const form = document.getElementById('area-formulario');
             const actions = document.getElementById('barra-acoes');
@@ -264,7 +291,7 @@
             }
         }
 
-        // Listeners
+        // LISTENERS
         document.getElementById('btn-fechar').onclick = () => document.getElementById('modal').classList.add('hidden');
         document.getElementById('modal-overlay').onclick = () => document.getElementById('modal').classList.add('hidden');
         document.getElementById('btn-editar').onclick = () => { if(EDITING) abrirModal(ATUAL); else { EDITING=true; atualizarModoEdicao(); }};
@@ -318,7 +345,6 @@
             desenharLista(f);
         }
 
-        // Inicia a verificação de segurança
         verificarSeguranca();
     </script>
 </body>
