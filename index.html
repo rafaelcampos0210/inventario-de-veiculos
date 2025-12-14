@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SGP - Sistema Policial</title>
+    <title>SGP - Painel de Controle</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -13,114 +13,130 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     
     <style>
-        body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .no-scroll::-webkit-scrollbar { display: none; }
         #corpo-site { opacity: 0; transition: opacity 0.5s; }
         
-        /* Modal Animation */
         .modal-up { animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         
         .input-box { width: 100%; background: transparent; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; font-size: 0.95rem; color: #1e293b; font-weight: 500; }
-        .input-box:read-only { background-color: #f8fafc; border-color: transparent; color: #64748b; }
+        .input-box:read-only { background-color: #f1f5f9; border-color: transparent; color: #64748b; }
         .editing .input-box { background-color: #fff; border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
-        
         .btn-trash { display: none !important; }
         .editing .btn-trash { display: flex !important; }
     </style>
 </head>
-<body class="text-slate-800 pb-28" id="corpo-site">
+<body class="text-slate-800 pb-32" id="corpo-site">
 
-    <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-md border-b border-slate-700">
-        <div class="max-w-3xl mx-auto px-4 h-16 flex justify-between items-center">
+    <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-xl border-b border-slate-700">
+        <div class="max-w-4xl mx-auto px-4 h-16 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <i class="ph-bold ph-police-car text-2xl text-blue-400"></i>
+                <div class="bg-white/10 p-2 rounded-lg"><i class="ph-bold ph-police-car text-xl text-blue-400"></i></div>
                 <div>
                     <h1 class="text-sm font-black tracking-widest uppercase">Pátio 116ª DP</h1>
-                    <p class="text-[10px] text-slate-400">SISTEMA SEGURO</p>
+                    <p class="text-[10px] text-slate-400 font-medium">Sistema Integrado</p>
                 </div>
             </div>
             <div class="flex gap-2">
-                <button onclick="baixarExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-xs font-bold transition border border-emerald-700 shadow-lg flex items-center gap-1" title="Baixar Planilha">
-                    <i class="ph-bold ph-file-xls text-lg"></i> <span class="hidden sm:inline">Excel</span>
+                <button onclick="baixarExcelAvancado()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded text-xs font-bold shadow-lg flex items-center gap-2 border border-emerald-500 transition active:scale-95">
+                    <i class="ph-bold ph-microsoft-excel text-lg"></i> <span class="hidden sm:inline">Relatório</span>
                 </button>
-
-                <button id="btn-novo" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded text-xs font-bold uppercase shadow-lg flex items-center gap-2 transition active:scale-95">
-                    <i class="ph-bold ph-plus"></i> Novo
+                <button id="btn-novo" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-bold uppercase shadow-lg flex items-center gap-2 transition active:scale-95">
+                    <i class="ph-bold ph-plus text-lg"></i> <span class="hidden sm:inline">Novo</span>
                 </button>
-                
-                <button onclick="window.sair()" class="bg-red-900/50 hover:bg-red-800 text-white p-2 rounded text-xs font-bold transition border border-red-900 ml-1" title="Sair">
+                <button onclick="window.sair()" class="bg-red-900/50 hover:bg-red-800 text-white p-2 rounded text-xs font-bold border border-red-900 ml-1 transition">
                     <i class="ph-bold ph-sign-out text-lg"></i>
                 </button>
             </div>
         </div>
     </header>
 
-    <main class="max-w-3xl mx-auto p-4">
-        <div class="grid grid-cols-2 gap-3 mb-6">
-            <div class="bg-white p-4 rounded border-l-4 border-slate-800 shadow-sm">
-                <p class="text-[10px] font-bold text-slate-400 uppercase">No Pátio</p>
-                <p class="text-3xl font-black text-slate-800 mt-1" id="stat-patio">-</p>
+    <main class="max-w-4xl mx-auto p-4">
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Total Geral</p>
+                <p class="text-2xl font-black text-slate-800 mt-1" id="stat-total">-</p>
+                <div class="absolute right-0 top-0 p-3 opacity-10"><i class="ph-fill ph-database text-4xl text-slate-800"></i></div>
             </div>
-            <div class="bg-white p-4 rounded border-l-4 border-emerald-500 shadow-sm">
-                <p class="text-[10px] font-bold text-slate-400 uppercase">Liberados</p>
-                <p class="text-3xl font-black text-emerald-600 mt-1" id="stat-liberado">-</p>
+
+            <div class="bg-white p-4 rounded-xl border-l-4 border-red-500 shadow-sm relative overflow-hidden">
+                <p class="text-[10px] font-bold text-red-500 uppercase tracking-wide">No Pátio</p>
+                <p class="text-2xl font-black text-slate-800 mt-1" id="stat-patio">-</p>
+                <div class="absolute right-0 top-0 p-3 opacity-10"><i class="ph-fill ph-lock-key text-4xl text-red-600"></i></div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border-l-4 border-emerald-500 shadow-sm relative overflow-hidden">
+                <p class="text-[10px] font-bold text-emerald-600 uppercase tracking-wide">Liberados</p>
+                <p class="text-2xl font-black text-slate-800 mt-1" id="stat-liberado">-</p>
+                <div class="absolute right-0 top-0 p-3 opacity-10"><i class="ph-fill ph-check-circle text-4xl text-emerald-600"></i></div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border-l-4 border-yellow-400 shadow-sm relative overflow-hidden">
+                <p class="text-[10px] font-bold text-yellow-600 uppercase tracking-wide">Auditados</p>
+                <div class="flex items-baseline gap-1 mt-1">
+                    <span class="text-2xl font-black text-slate-800" id="stat-audit">-</span>
+                    <span class="text-xs font-bold text-slate-400" id="stat-audit-perc">%</span>
+                </div>
+                <div class="absolute right-0 top-0 p-3 opacity-10"><i class="ph-fill ph-clipboard-text text-4xl text-yellow-500"></i></div>
             </div>
         </div>
 
-        <div class="relative mb-6">
-            <input type="text" id="campo-busca" class="w-full pl-4 pr-4 py-3 bg-white border-none rounded shadow-sm outline-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-medium placeholder:text-slate-400" placeholder="🔍 Pesquisar Placa, BOE...">
+        <div class="relative mb-6 group">
+            <i class="ph-bold ph-magnifying-glass absolute left-4 top-3.5 text-slate-400 group-focus-within:text-blue-600 transition"></i>
+            <input type="text" id="campo-busca" class="w-full pl-11 pr-4 py-3 bg-white border-none rounded-xl shadow-sm outline-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-medium placeholder:text-slate-400 transition" placeholder="Pesquisar por Placa, BOE, Modelo...">
         </div>
 
-        <div id="lista-container" class="space-y-4">
-            <div class="text-center py-10 text-slate-400 text-xs font-bold uppercase animate-pulse">Carregando...</div>
+        <div id="lista-container" class="space-y-3 pb-10">
+            <div class="text-center py-10 text-slate-400 text-xs font-bold uppercase animate-pulse">Sincronizando dados...</div>
         </div>
     </main>
 
     <div id="modal" class="fixed inset-0 z-[100] hidden flex flex-col">
-        <div class="absolute inset-0 bg-slate-900/90 backdrop-blur-sm transition-opacity" id="modal-overlay"></div>
+        <div class="absolute inset-0 bg-slate-900/90 backdrop-blur-sm" id="modal-overlay"></div>
         <div class="absolute inset-x-0 bottom-0 top-0 md:top-10 md:inset-x-auto md:right-0 md:w-[600px] bg-slate-50 md:rounded-l-2xl shadow-2xl overflow-hidden flex flex-col modal-up">
             
             <div class="bg-white px-5 py-3 border-b border-slate-200 flex justify-between items-center sticky top-0 z-10 shadow-sm">
-                <button id="btn-fechar" class="text-slate-400 hover:text-slate-700 p-2"><i class="ph-bold ph-x text-2xl"></i></button>
-                <span class="text-xs font-black text-slate-500 uppercase tracking-widest">PRONTUÁRIO</span>
-                <button id="btn-editar" class="text-blue-600 bg-blue-50 border border-blue-100 px-4 py-2 rounded text-xs font-bold uppercase flex items-center gap-2 active:scale-95 transition">
+                <button id="btn-fechar" class="text-slate-400 hover:text-slate-700 p-2 rounded-full hover:bg-slate-100 transition"><i class="ph-bold ph-x text-xl"></i></button>
+                <span class="text-xs font-black text-slate-500 uppercase tracking-widest">PRONTUÁRIO DIGITAL</span>
+                <button id="btn-editar" class="text-blue-600 bg-blue-50 border border-blue-100 px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-2 active:scale-95 transition hover:bg-blue-100">
                     <i class="ph-bold ph-pencil-simple"></i> Editar
                 </button>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-5 space-y-8 bg-slate-50" id="area-formulario">
+            <div class="flex-1 overflow-y-auto p-5 space-y-6 bg-slate-50" id="area-formulario">
                 <input type="hidden" id="in-id">
                 
-                <div class="space-y-3">
-                    <div class="flex justify-between items-end">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Fotos</label>
-                        <label class="bg-slate-900 text-white px-3 py-1.5 rounded text-[10px] font-bold uppercase cursor-pointer flex items-center gap-2 shadow hover:bg-slate-800 transition active:scale-95">
+                <div class="bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+                    <button onclick="alternarConferencia()" id="btn-auditoria" class="w-full py-4 rounded-lg font-bold uppercase text-xs tracking-widest flex items-center justify-center gap-3 transition active:scale-[0.98]">
+                        </button>
+                </div>
+
+                <div class="space-y-2">
+                    <div class="flex justify-between items-end px-1">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Registro Fotográfico</label>
+                        <label class="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase cursor-pointer flex items-center gap-2 shadow hover:bg-slate-800 transition active:scale-95">
                             <i class="ph-bold ph-camera text-lg"></i> Adicionar
                             <input type="file" id="input-camera" accept="image/*" class="hidden">
                         </label>
                     </div>
-                    <div id="galeria" class="flex gap-3 overflow-x-auto pb-4 no-scroll snap-x min-h-[100px]"></div>
-                    <p id="status-upload" class="hidden text-center text-[10px] font-bold text-blue-600 animate-pulse bg-blue-50 py-2 rounded border border-blue-100">Enviando...</p>
+                    <div id="galeria" class="flex gap-3 overflow-x-auto pb-4 pt-1 px-1 no-scroll snap-x min-h-[110px]"></div>
+                    <p id="status-upload" class="hidden text-center text-[10px] font-bold text-blue-600 animate-pulse bg-blue-50 py-2 rounded border border-blue-100">Enviando imagem...</p>
                 </div>
 
-                <div class="bg-white p-6 rounded border border-slate-200 shadow-sm relative overflow-hidden">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
                     <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-600"></div>
-                    <div class="grid grid-cols-2 gap-6 mb-5">
+                    <div class="grid grid-cols-2 gap-5 mb-4">
                         <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Placa</label><input id="in-placa" class="input-box text-3xl font-mono font-black uppercase text-slate-900 tracking-widest p-0 border-none bg-transparent" readonly></div>
                         <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">NIBA</label><input id="in-niba" class="input-box font-mono text-blue-600 font-bold bg-blue-50 border-blue-100" readonly></div>
                     </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Situação</label>
-                        <select id="in-status" class="input-box font-bold bg-slate-100 border-transparent text-slate-700" disabled>
-                            <option value="No Pátio">🔒 APREENDIDO NO PÁTIO</option>
-                            <option value="Liberado">✅ LIBERADO / ENTREGUE</option>
-                        </select>
-                    </div>
+                    <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Status Atual</label><select id="in-status" class="input-box font-bold bg-slate-100 border-transparent text-slate-700" disabled><option value="No Pátio">🔒 APREENDIDO (NO PÁTIO)</option><option value="Liberado">✅ LIBERADO / ENTREGUE</option></select></div>
                 </div>
 
                 <div class="space-y-4">
-                    <h3 class="text-xs font-bold text-slate-900 uppercase border-b border-slate-200 pb-2">Veículo</h3>
+                    <h3 class="text-xs font-bold text-slate-900 uppercase border-b border-slate-200 pb-2 px-1">Dados do Veículo</h3>
                     <div class="grid grid-cols-2 gap-4">
                         <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Modelo</label><input id="in-modelo" class="input-box" readonly></div>
                         <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Marca</label><input id="in-marca" class="input-box" readonly></div>
@@ -130,22 +146,23 @@
                 </div>
 
                 <div class="space-y-4">
-                    <h3 class="text-xs font-bold text-slate-900 uppercase border-b border-slate-200 pb-2">Jurídico</h3>
-                    <div class="bg-red-50 p-3 rounded border border-red-100">
-                        <label class="text-[10px] font-bold text-red-400 uppercase block mb-1">Infração</label>
-                        <input id="in-infracao" class="input-box text-red-700 font-bold bg-transparent border-none p-0 uppercase" readonly>
-                    </div>
+                    <h3 class="text-xs font-bold text-slate-900 uppercase border-b border-slate-200 pb-2 px-1">Dados Legais</h3>
+                    <div class="bg-red-50 p-3 rounded-lg border border-red-100"><label class="text-[10px] font-bold text-red-400 uppercase block mb-1">Infração Penal</label><input id="in-infracao" class="input-box text-red-700 font-bold bg-transparent border-none p-0 uppercase" readonly></div>
                     <div class="grid grid-cols-2 gap-4">
                         <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">BOE</label><input id="in-boe" class="input-box" readonly></div>
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Processo</label><input id="in-processo" class="input-box" readonly></div>
+                        <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Processo / VPI</label><input id="in-processo" class="input-box" readonly></div>
                     </div>
-                    <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Observações</label><textarea id="in-obs" rows="4" class="input-box resize-none leading-relaxed" readonly></textarea></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Observações e Histórico</label><textarea id="in-obs" rows="5" class="input-box resize-none leading-relaxed" readonly></textarea></div>
                 </div>
             </div>
 
             <div id="barra-acoes" class="p-5 bg-white border-t border-slate-200 hidden flex-col gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-                <button id="btn-salvar" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded shadow-lg uppercase text-xs tracking-widest active:scale-[0.98] transition">Salvar Alterações</button>
-                <button id="btn-excluir-veiculo" class="w-full bg-white border border-red-200 text-red-600 hover:bg-red-50 font-bold py-3 rounded transition uppercase text-xs tracking-widest flex items-center justify-center gap-2 active:scale-[0.98]"><i class="ph-bold ph-trash"></i> EXCLUIR VEÍCULO</button>
+                <button id="btn-salvar" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-lg shadow-lg uppercase text-xs tracking-widest active:scale-[0.98] transition flex justify-center gap-2 items-center">
+                    <i class="ph-bold ph-floppy-disk text-lg"></i> SALVAR ALTERAÇÕES
+                </button>
+                <button id="btn-excluir-veiculo" class="w-full bg-white border border-red-200 text-red-600 hover:bg-red-50 font-bold py-3 rounded-lg uppercase text-xs tracking-widest flex items-center justify-center gap-2 active:scale-[0.98] transition">
+                    <i class="ph-bold ph-trash text-lg"></i> EXCLUIR REGISTRO
+                </button>
             </div>
         </div>
     </div>
@@ -159,113 +176,143 @@
         let ATUAL = null;
         let EDITING = false;
 
-        // 1. SEGURANÇA
         async function verificarSeguranca() {
             const { data } = await supabase.auth.getSession();
             if (!data.session) window.location.href = 'login.html';
-            else {
-                document.getElementById('corpo-site').style.opacity = '1';
-                carregarDados();
+            else { document.getElementById('corpo-site').style.opacity = '1'; carregarDados(); }
+        }
+        window.sair = async () => { await supabase.auth.signOut(); window.location.href = 'login.html'; }
+
+        // --- SISTEMA DE AUDITORIA ---
+        async function alternarConferencia() {
+            if(!ATUAL) return;
+            ATUAL.verificado = !ATUAL.verificado;
+            renderBotaoAuditoria();
+            await supabase.from('veiculos').update({ verificado: ATUAL.verificado }).eq('id', ATUAL.id);
+            carregarDados(); // Atualiza dashboard
+        }
+
+        function renderBotaoAuditoria() {
+            const btn = document.getElementById('btn-auditoria');
+            if (ATUAL.verificado) {
+                btn.className = "w-full py-4 rounded-lg font-bold uppercase text-xs tracking-widest flex items-center justify-center gap-2 transition shadow-md active:scale-95 bg-emerald-600 text-white hover:bg-emerald-700";
+                btn.innerHTML = '<i class="ph-bold ph-check-circle text-xl"></i><span>CONFERIDO NO PÁTIO</span>';
+            } else {
+                btn.className = "w-full py-4 rounded-lg font-bold uppercase text-xs tracking-widest flex items-center justify-center gap-2 transition shadow-md active:scale-95 bg-slate-100 text-slate-400 hover:bg-slate-200 border border-slate-200";
+                btn.innerHTML = '<i class="ph-bold ph-square text-xl"></i><span>MARCAR COMO CONFERIDO</span>';
             }
         }
 
-        window.sair = async () => { await supabase.auth.signOut(); window.location.href = 'login.html'; }
+        // --- EXPORTAÇÃO EXCEL ---
+        window.baixarExcelAvancado = async function() {
+            if(!confirm("Baixar relatório completo em Excel?")) return;
+            const { data } = await supabase.from('veiculos').select('*');
+            const dadosLimpos = data.map(v => {
+                let obs = (v.observacoes || "").toUpperCase();
+                let placaFinal = v.placa;
+                const matchPlaca = obs.match(/PLACA\s*:?\s*([A-Z]{3}[0-9][0-9A-Z][0-9]{2})/);
+                if (matchPlaca && (!placaFinal || placaFinal.length < 7)) placaFinal = matchPlaca[1];
 
-        // 2. EXPORTAR EXCEL (NOVO)
-        window.baixarExcel = async function() {
-            if(!confirm("Deseja baixar a planilha completa com todos os veículos?")) return;
-            
-            // Busca dados frescos do banco
-            const { data, error } = await supabase.from('veiculos').select('*');
-            if(error) return alert("Erro ao baixar dados: " + error.message);
-
-            // Formata para ficar bonito no Excel
-            const dadosFormatados = data.map(v => ({
-                "PLACA": v.placa,
-                "STATUS": v.status,
-                "MODELO": v.modelo,
-                "MARCA": v.marca,
-                "COR": v.cor,
-                "NIBA": v.niba,
-                "BOE": v.boe,
-                "PROCESSO": v.processo,
-                "INFRAÇÃO": v.infracao,
-                "OBSERVAÇÕES": v.observacoes,
-                "ID_SISTEMA": v.id
-            }));
-
-            // Cria a planilha usando a biblioteca SheetJS
-            const ws = XLSX.utils.json_to_sheet(dadosFormatados);
+                return {
+                    "AUDITORIA": v.verificado ? "✅ CONFERIDO" : "❌ PENDENTE",
+                    "PLACA": placaFinal,
+                    "STATUS": v.status,
+                    "MODELO": v.modelo,
+                    "MARCA": v.marca,
+                    "COR": v.cor,
+                    "BOE": v.boe || "N/I",
+                    "PROCESSO": v.processo || "N/I",
+                    "INFRAÇÃO": v.infracao,
+                    "OBSERVAÇÕES": obs
+                };
+            });
+            const ws = XLSX.utils.json_to_sheet(dadosLimpos);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Veiculos_Patio_116DP");
-            
-            // Download
-            XLSX.writeFile(wb, "Patio_116DP_Completo.xlsx");
+            XLSX.utils.book_append_sheet(wb, ws, "Relatorio_Geral");
+            XLSX.writeFile(wb, "Relatorio_Patio_116DP.xlsx");
         }
 
-        // 3. CARREGAR DADOS
+        // --- DADOS E INTERFACE ---
         async function carregarDados() {
             try {
                 const { data, error } = await supabase.from('veiculos').select('*').order('id', { ascending: false });
                 if (error) throw error;
                 CACHE = data;
-                document.getElementById('stat-patio').innerText = CACHE.filter(v => v.status === 'No Pátio').length;
-                document.getElementById('stat-liberado').innerText = CACHE.filter(v => v.status === 'Liberado').length;
+                
+                // ATUALIZA PLACAR
+                const total = CACHE.length;
+                const patio = CACHE.filter(v => v.status === 'No Pátio').length;
+                const liberado = CACHE.filter(v => v.status === 'Liberado').length;
+                const conferido = CACHE.filter(v => v.verificado && v.status === 'No Pátio').length; // Só conta auditado se estiver no pátio
+                const perc = patio > 0 ? Math.round((conferido / patio) * 100) : 0;
+
+                document.getElementById('stat-total').innerText = total;
+                document.getElementById('stat-patio').innerText = patio;
+                document.getElementById('stat-liberado').innerText = liberado;
+                document.getElementById('stat-audit').innerText = conferido + ` / ${patio}`;
+                document.getElementById('stat-audit-perc').innerText = `(${perc}%)`;
+
                 desenharLista(data);
-            } catch (erro) {
-                document.getElementById('lista-container').innerHTML = '<p class="text-center text-red-500 font-bold p-10">Falha ao carregar dados.</p>';
-            }
+            } catch (erro) { console.error(erro); }
         }
 
         function desenharLista(lista) {
             const container = document.getElementById('lista-container');
             container.innerHTML = '';
-            if (lista.length === 0) {
-                container.innerHTML = '<div class="text-center py-10 text-slate-400 font-bold">NENHUM REGISTRO</div>';
-                return;
-            }
+            if (lista.length === 0) { container.innerHTML = '<div class="text-center py-10 text-slate-400 font-bold">NENHUM REGISTRO</div>'; return; }
+            
             lista.forEach(v => {
                 const card = document.createElement('div');
                 const isPatio = v.status === 'No Pátio';
-                const badge = isPatio ? 'text-red-600 bg-red-50 border-red-100' : 'text-emerald-600 bg-emerald-50 border-emerald-100';
-                card.className = "bg-white p-5 rounded border border-slate-200 shadow-sm hover:border-blue-400 transition";
-                card.innerHTML = `
-                    <div class="flex justify-between items-start mb-2"><h3 class="text-xl font-black text-slate-800 font-mono tracking-wide">${v.placa}</h3><span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase border ${badge}">${isPatio ? 'Apreendido' : 'Liberado'}</span></div>
-                    <div class="text-sm font-bold text-slate-600 flex items-center gap-2 mb-4">${v.modelo || 'MODELO N/I'}<span class="text-xs font-normal text-slate-300">|</span><span class="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">${v.cor || 'COR N/I'}</span></div>
-                    <div class="flex flex-wrap gap-2 pt-3 border-t border-slate-100 mb-4">${v.boe ? `<span class="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-100">BOE: ${v.boe}</span>` : ''}</div>
-                    <button class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded text-xs uppercase tracking-widest shadow transition btn-ver">VER DETALHES</button>`;
                 
+                // Estilo Dinâmico (Se auditado, fica verde na borda)
+                let borda = isPatio ? (v.verificado ? 'border-emerald-500 border-l-4' : 'border-slate-200') : 'border-slate-200 border-l-4 border-l-slate-300 opacity-75';
+                let selo = v.verificado && isPatio ? '<div class="absolute right-0 top-0 bg-emerald-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-bl-lg"><i class="ph-bold ph-check"></i> OK</div>' : '';
+
+                card.className = `bg-white p-5 rounded-xl border ${borda} shadow-sm hover:shadow-md transition relative overflow-hidden group cursor-pointer`;
+                card.innerHTML = `
+                    ${selo}
+                    <div class="flex justify-between items-start mb-2 mt-1">
+                        <h3 class="text-lg font-black text-slate-800 font-mono tracking-wide group-hover:text-blue-600 transition">${v.placa}</h3>
+                        ${isPatio ? '<span class="text-[9px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100 uppercase">Pátio</span>' : '<span class="text-[9px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 uppercase">Liberado</span>'}
+                    </div>
+                    <div class="text-xs font-bold text-slate-500 flex items-center gap-2 mb-3">
+                        ${v.modelo || 'MODELO N/I'}
+                        <span class="text-[9px] text-slate-300">|</span>
+                        <span class="bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">${v.cor || 'COR N/I'}</span>
+                    </div>
+                    <div class="flex gap-2 pt-3 border-t border-slate-50">
+                        ${v.boe ? `<span class="text-[9px] font-bold text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded">BOE: ${v.boe}</span>` : ''}
+                        ${v.niba ? `<span class="text-[9px] font-bold text-blue-400 bg-blue-50 px-1.5 py-0.5 rounded">NIBA: ${v.niba}</span>` : ''}
+                    </div>
+                    <button class="absolute inset-0 w-full h-full opacity-0 btn-ver"></button>
+                `;
                 card.querySelector('.btn-ver').addEventListener('click', () => abrirModal(v));
                 container.appendChild(card);
             });
         }
 
-        // 4. MODAL E EDIÇÃO
+        // --- FUNÇÕES DE APOIO ---
         function abrirModal(v) {
-            ATUAL = v;
-            EDITING = false;
-            atualizarModoEdicao();
+            ATUAL = v; EDITING = false; atualizarModoEdicao(); renderBotaoAuditoria();
             ['placa','niba','status','modelo','marca','cor','tipo','infracao','boe','processo','obs'].forEach(k => {
                 const el = document.getElementById('in-' + k);
                 const key = k === 'obs' ? 'observacoes' : k;
                 if(el) el.value = ATUAL[key] || '';
             });
-            renderGaleria();
-            document.getElementById('modal').classList.remove('hidden');
+            renderGaleria(); document.getElementById('modal').classList.remove('hidden');
         }
 
         function renderGaleria() {
-            const el = document.getElementById('galeria');
-            el.innerHTML = '';
+            const el = document.getElementById('galeria'); el.innerHTML = '';
             let fotos = ATUAL.fotos || [];
             if(fotos.length===0 && ATUAL.foto_url) fotos = [ATUAL.foto_url];
             ATUAL.fotos = fotos;
-
-            if(fotos.length === 0) el.innerHTML = '<div class="text-[10px] font-bold text-slate-400 bg-slate-100 border border-dashed border-slate-300 p-4 rounded w-full text-center">SEM FOTOS</div>';
+            if(fotos.length === 0) el.innerHTML = '<div class="text-[10px] font-bold text-slate-400 bg-slate-100 border border-dashed border-slate-300 p-4 rounded-lg w-full text-center flex flex-col items-center justify-center gap-1 h-24"><i class="ph-bold ph-image-broken text-xl"></i><span>SEM FOTOS</span></div>';
             else fotos.forEach((url, i) => {
                 const d = document.createElement('div');
-                d.className = "relative w-24 h-24 bg-slate-200 rounded overflow-hidden border border-slate-300 shrink-0 shadow-sm";
-                d.innerHTML = `<img src="${url}" class="w-full h-full object-cover cursor-pointer" onclick="window.open('${url}')"><button class="btn-trash absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full items-center justify-center shadow z-10"><i class="ph-bold ph-trash text-xs"></i></button>`;
+                d.className = "relative w-28 h-28 bg-slate-200 rounded-lg overflow-hidden border border-slate-300 shrink-0 shadow-sm group";
+                d.innerHTML = `<img src="${url}" class="w-full h-full object-cover cursor-pointer transition group-hover:scale-110" onclick="window.open('${url}')"><button class="btn-trash absolute top-1 right-1 bg-red-600/90 hover:bg-red-600 text-white w-7 h-7 rounded-full items-center justify-center shadow-lg z-10 transition transform hover:scale-110"><i class="ph-bold ph-trash text-xs"></i></button>`;
                 d.querySelector('.btn-trash').onclick = () => excluirFoto(i);
                 el.appendChild(d);
             });
@@ -275,23 +322,18 @@
             const form = document.getElementById('area-formulario');
             const actions = document.getElementById('barra-acoes');
             const btn = document.getElementById('btn-editar');
-            const inputs = form.querySelectorAll('input, select, textarea');
-            
+            const inputs = form.querySelectorAll('input:not([type=hidden]), select, textarea');
             if(EDITING) {
-                form.classList.add('editing');
-                actions.classList.remove('hidden');
-                actions.classList.add('flex');
-                btn.innerHTML = '<i class="ph-bold ph-x"></i> Cancelar';
+                form.classList.add('editing'); actions.classList.remove('hidden'); actions.classList.add('flex');
+                btn.innerHTML = '<i class="ph-bold ph-x"></i> Cancelar'; btn.className = "text-slate-600 bg-slate-200 border border-slate-300 px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-2 active:scale-95 transition";
                 inputs.forEach(i => { if(i.id !== 'in-placa') { i.removeAttribute('readonly'); i.removeAttribute('disabled'); }});
             } else {
-                form.classList.remove('editing');
-                actions.classList.add('hidden');
-                btn.innerHTML = '<i class="ph-bold ph-pencil-simple"></i> Editar';
+                form.classList.remove('editing'); actions.classList.add('hidden');
+                btn.innerHTML = '<i class="ph-bold ph-pencil-simple"></i> Editar'; btn.className = "text-blue-600 bg-blue-50 border border-blue-100 px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-2 active:scale-95 transition hover:bg-blue-100";
                 inputs.forEach(i => { i.setAttribute('readonly', true); if(i.tagName==='SELECT') i.setAttribute('disabled',true); });
             }
         }
 
-        // LISTENERS
         document.getElementById('btn-fechar').onclick = () => document.getElementById('modal').classList.add('hidden');
         document.getElementById('modal-overlay').onclick = () => document.getElementById('modal').classList.add('hidden');
         document.getElementById('btn-editar').onclick = () => { if(EDITING) abrirModal(ATUAL); else { EDITING=true; atualizarModoEdicao(); }};
@@ -307,7 +349,7 @@
         }
 
         document.getElementById('btn-excluir-veiculo').onclick = async () => {
-            if(!confirm("⚠️ AÇÃO IRREVERSÍVEL\n\nDeseja realmente excluir este veículo?")) return;
+            if(!confirm("⚠️ EXCLUIR REGISTRO?\nEsta ação não pode ser desfeita.")) return;
             const { error } = await supabase.from('veiculos').delete().eq('id', ATUAL.id);
             if(error) alert("Erro: " + error.message); else { alert("Excluído!"); document.getElementById('modal').classList.add('hidden'); carregarDados(); }
         }
