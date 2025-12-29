@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Migrador Automático SGP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-900 text-white p-6 font-sans flex items-center justify-center min-h-screen">
+
+    <div class="w-full max-w-2xl bg-slate-800 p-8 rounded-xl shadow-2xl border border-slate-700">
+        <h1 class="text-2xl font-black mb-2 text-orange-500 flex items-center gap-2 uppercase tracking-widest">
+            Transferência de Dados
+        </h1>
+        <p class="text-slate-400 mb-6 text-sm font-bold">De: Supabase (Antigo) ➔ Para: Firebase (Novo)</p>
+
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="p-4 bg-black/40 rounded border border-green-900/50">
+                <p class="font-bold text-green-400 text-xs uppercase mb-1">Origem</p>
+                <p class="text-sm font-bold">Supabase</p>
+                <p class="text-[10px] text-slate-500 mt-1">Status: <span class="text-green-400">Conectado</span></p>
+            </div>
+            <div class="p-4 bg-black/40 rounded border border-orange-900/50">
+                <p class="font-bold text-orange-400 text-xs uppercase mb-1">Destino</p>
+                <p class="text-sm font-bold">Firebase (sgp-patio)</p>
+                <p class="text-[10px] text-slate-500 mt-1">Status: <span class="text-green-400">Configurado</span></p>
+            </div>
+        </div>
+
+        <button onclick="iniciarMigracao()" id="btn-migrar" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-lg shadow-lg transition text-sm tracking-widest uppercase mb-6 active:scale-95">
+            INICIAR MIGRAÇÃO AGORA
+        </button>
+
+        <div class="bg-black rounded-lg border border-slate-700 p-4 h-64 overflow-y-auto font-mono text-xs" id="console-area">
+            <div class="text-slate-500 animate-pulse">Aguardando comando do usuário...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        // 1. IMPORTAR BIBLIOTECAS DO GOOGLE
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // 2. CONFIGURAÇÃO JÁ PREENCHIDA (NÃO PRECISA MEXER)
+        const firebaseConfig = {
+          apiKey: "AIzaSyA-q94iSIsQuRl1xS1S8vw2RkDAxMzZoLk",
+          authDomain: "sgp-patio.firebaseapp.com",
+          projectId: "sgp-patio",
+          storageBucket: "sgp-patio.firebasestorage.app",
+          messagingSenderId: "264796636092",
+          appId: "1:264796636092:web:91d69d0853df208c9761b9"
+        };
+
+        // 3. INICIALIZAR SISTEMAS
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const SUPA_URL = 'https://newbrgjewjnebfnhumci.supabase.co';
+        const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ld2JyZ2pld2puZWJmbmh1bWNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1NDcyMTAsImV4cCI6MjA4MTEyMzIxMH0.Z_AE5HnKxIwNni9RXgI1aGViJX2v_4Z0Nd5uMEqIue4';
+        const supabase = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+
+        // FUNÇÃO DE LOG NA TELA
+        function log(msg, color = 'text-slate-300') {
+            const area = document.getElementById('console-area');
+            const div = document.createElement('div');
+            div.className = `mb-1 border-b border-white/5 pb-1 ${color}`;
+            div.innerText = `> ${msg}`;
+            area.appendChild(div);
+            area.scrollTop = area.scrollHeight;
+        }
+
+        // --- LÓGICA DA MIGRAÇÃO ---
+        window.iniciarMigracao = async () => {
+            const btn = document.getElementById('btn-migrar');
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            btn.innerText = "MIGRANDO... POR FAVOR AGUARDE";
+            
+            // LIMPA LOG
+            document.getElementById('console-area').innerHTML = '';
+
+            try {
+                // ETAPA 1: VEÍCULOS
+                log("Conectando ao banco antigo...", 'text-blue-400');
+                const { data: veiculos, error: errV } = await supabase.from('veiculos').select('*');
+                
+                if (errV) throw new Error("Erro ao ler Supabase: " + errV.message);
+                log(`✅ Conectado! Encontrados ${veiculos.length} veículos.`, 'text-green-400');
+                log("Iniciando transferência para o Firebase...", 'text-yellow-200');
+
+                let countV = 0;
+                for (const carro of veiculos) {
+                    // Prepara dados (garante que não quebre se faltar campo)
+                    const dados = {
+                        placa: carro.placa || 'SEM-PLACA',
+                        modelo: carro.modelo || '',
+                        cor: carro.cor || '',
+                        status: carro.status || 'No Pátio',
+                        verificado: carro.verificado || false,
+                        boe: carro.boe || '',
+                        processo: carro.processo || '',
+                        niba: carro.niba || '',
+                        observacoes: carro.observacoes || '',
+                        infracao: carro.infracao || '',
+                        fotos: carro.fotos || [], // Mantem URLs antigas
+                        id_antigo: carro.id // Salva o ID antigo por segurança
+                    };
+
+                    // Salva no Firebase usando o mesmo ID numérico (convertido pra texto)
+                    await setDoc(doc(db, "veiculos", String(carro.id)), dados);
+                    log(`[Veículo] ${carro.placa} ... OK`);
+                    countV++;
+                }
+
+                // ETAPA 2: HISTÓRICO
+                log("--------------------------------");
+                log("Buscando histórico de ações...", 'text-blue-400');
+                const { data: historico, error: errH } = await supabase.from('historico').select('*');
+                
+                if (!errH && historico) {
+                    log(`✅ Histórico encontrado: ${historico.length} registros.`, 'text-green-400');
+                    let countH = 0;
+                    for (const h of historico) {
+                        const dadosH = {
+                            acao: h.acao || 'Ação',
+                            placa: h.placa || '?',
+                            usuario: h.usuario || 'Sistema',
+                            detalhes: h.detalhes || '',
+                            data_original: h.data_hora // Salva data como string original
+                        };
+                        await setDoc(doc(db, "historico", String(h.id)), dadosH);
+                        countH++;
+                        if(countH % 5 === 0) log(`Processando histórico... (${countH}/${historico.length})`);
+                    }
+                }
+
+                log("--------------------------------");
+                log("🎉 SUCESSO! TUDO TRANSFERIDO.", 'text-green-500 font-bold text-lg');
+                alert("MIGRAÇÃO CONCLUÍDA! \nAgora você pode usar o sistema normalmente.");
+                btn.innerText = "MIGRAÇÃO FINALIZADA";
+                btn.className = "w-full bg-green-600 text-white font-bold py-4 rounded-lg shadow-lg";
+
+            } catch (erro) {
+                log("❌ ERRO: " + erro.message, 'text-red-500 font-bold');
+                console.error(erro);
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                btn.innerText = "TENTAR NOVAMENTE";
+            }
+        };
+    </script>
+</body>
+</html>
