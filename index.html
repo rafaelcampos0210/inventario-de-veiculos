@@ -19,8 +19,6 @@
         .input-box { width: 100%; background: transparent; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; font-size: 0.95rem; color: #1e293b; font-weight: 500; }
         .input-box:read-only { background-color: #f1f5f9; border-color: transparent; color: #64748b; }
         .editing .input-box { background-color: #fff; border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
-        .btn-trash { display: none !important; }
-        .editing .btn-trash { display: flex !important; }
         .filter-btn.active { background-color: #1e293b; color: white; border-color: #1e293b; }
     </style>
 </head>
@@ -28,7 +26,7 @@
 
     <div id="tela-loading" class="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center z-[999] text-white">
         <i class="ph-bold ph-spinner animate-spin text-4xl mb-4 text-orange-500"></i>
-        <p class="text-xs font-bold tracking-widest uppercase">Conectando ao Google...</p>
+        <p class="text-xs font-bold tracking-widest uppercase">Carregando Sistema...</p>
     </div>
 
     <div id="conteudo-principal">
@@ -36,11 +34,11 @@
             <div class="max-w-4xl mx-auto px-4 h-16 flex justify-between items-center">
                 <div class="flex items-center gap-3">
                     <div class="bg-white/10 p-2 rounded-lg"><i class="ph-bold ph-police-car text-xl text-blue-400"></i></div>
-                    <div><h1 class="text-sm font-black tracking-widest uppercase">Pátio 116ª DP</h1><p class="text-[10px] text-slate-400">Firebase System</p></div>
+                    <div><h1 class="text-sm font-black tracking-widest uppercase">Pátio 116ª DP</h1><p class="text-[10px] text-slate-400">Versão Final</p></div>
                 </div>
                 <div class="flex gap-2">
-                    <button id="btn-backup" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-600 flex gap-2 items-center transition" title="Gerar Planilha"><i class="ph-bold ph-table text-lg"></i> <span class="hidden sm:inline">GERAR PLANILHA</span></button>
-                    <button id="btn-novo" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold uppercase flex items-center gap-2 transition active:scale-95"><i class="ph-bold ph-plus"></i> Novo</button>
+                    <button id="btn-backup" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-600 flex gap-2 items-center transition" title="Gerar Planilha"><i class="ph-bold ph-file-xls text-lg"></i> <span class="hidden sm:inline">EXCEL</span></button>
+                    <button id="btn-novo" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold uppercase flex items-center gap-2 transition active:scale-95 shadow-lg shadow-blue-900/50"><i class="ph-bold ph-plus"></i> Novo</button>
                     <button id="btn-sair" class="bg-red-900/50 hover:bg-red-800 text-white p-2 rounded-lg border border-red-900 transition"><i class="ph-bold ph-sign-out text-lg"></i></button>
                 </div>
             </div>
@@ -81,7 +79,7 @@
             <div class="flex-1 overflow-y-auto p-5 space-y-6 bg-slate-50" id="area-formulario">
                 
                 <div class="bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
-                    <button id="btn-auditoria" class="w-full py-4 rounded-lg font-bold uppercase text-xs tracking-widest flex items-center justify-center gap-3 transition active:scale-[0.98]"></button>
+                    <button id="btn-auditoria" onclick="window.alternarConferencia()" class="w-full py-4 rounded-lg font-bold uppercase text-xs tracking-widest flex items-center justify-center gap-3 transition active:scale-[0.98]"></button>
                 </div>
                 
                 <div class="space-y-2">
@@ -101,6 +99,8 @@
                 <div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1">BOE</label><input id="in-boe" class="input-box" readonly></div><div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Processo / VPI</label><input id="in-processo" class="input-box" readonly></div></div>
                 <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Observações e Histórico</label><textarea id="in-obs" rows="5" class="input-box resize-none leading-relaxed" readonly></textarea></div>
                 
+                <div class="text-right text-[10px] text-slate-400 italic mt-2" id="texto-data-entrada"></div>
+
                 <div class="border-t border-slate-200 pt-4 mt-4">
                     <button id="btn-ver-historico" class="text-xs text-blue-600 font-bold hover:underline flex items-center gap-1"><i class="ph-bold ph-clock-counter-clockwise"></i> Ver Histórico de Alterações</button>
                     <div id="lista-historico" class="hidden mt-3 space-y-2 text-[10px] text-slate-500 bg-slate-100 p-3 rounded-lg"></div>
@@ -120,7 +120,9 @@
         import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-        // SUA CONFIGURAÇÃO DO FIREBASE (JÁ INSERIDA)
+        // ========================================================
+        // ⚠️ SUA CONFIGURAÇÃO DO FIREBASE (JÁ INSERIDA) ⚠️
+        // ========================================================
         const firebaseConfig = {
             apiKey: "AIzaSyA-q94iSIsQuRl1xS1S8vw2RkDAxMzZoLk",
             authDomain: "sgp-patio.firebaseapp.com",
@@ -129,6 +131,7 @@
             messagingSenderId: "264796636092",
             appId: "1:264796636092:web:91d69d0853df208c9761b9"
         };
+        // ========================================================
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -142,7 +145,6 @@
         let FILTRO_ATUAL = 'todos';
         let USUARIO_EMAIL = '';
 
-        // SEGURANÇA E LOGIN
         onAuthStateChanged(auth, (user) => {
             if (!user) window.location.href = "login.html";
             else {
@@ -155,26 +157,24 @@
 
         document.getElementById('btn-sair').onclick = () => signOut(auth);
 
-        // CRUD FIREBASE
+        // 1. CARREGAMENTO COM ORDEM CORRIGIDA (MAIS RECENTES PRIMEIRO)
         async function carregarDados() {
             try {
-                // Tenta carregar ordenado (pode precisar de índice)
-                // Se der erro de índice, carrega sem ordem e ordena no front
-                try {
-                    const q = query(collection(db, "veiculos"), orderBy("placa"));
-                    const querySnapshot = await getDocs(q);
-                    CACHE = [];
-                    querySnapshot.forEach((doc) => { CACHE.push({ id: doc.id, ...doc.data() }); });
-                } catch(errIdx) {
-                    const querySnapshot = await getDocs(collection(db, "veiculos"));
-                    CACHE = [];
-                    querySnapshot.forEach((doc) => { CACHE.push({ id: doc.id, ...doc.data() }); });
-                    CACHE.sort((a,b) => (a.placa || "").localeCompare(b.placa || ""));
-                }
+                const querySnapshot = await getDocs(collection(db, "veiculos"));
+                CACHE = [];
+                querySnapshot.forEach((doc) => { CACHE.push({ id: doc.id, ...doc.data() }); });
+                
+                // Ordena por Data de Entrada (Decrescente)
+                CACHE.sort((a, b) => {
+                    const dataA = a.data_entrada?.seconds || 0;
+                    const dataB = b.data_entrada?.seconds || 0;
+                    return dataB - dataA; // Maior (mais novo) primeiro
+                });
+
                 atualizarInterface();
             } catch (e) {
                 console.error(e);
-                alert("Erro ao carregar dados. Verifique a internet.");
+                alert("Erro de conexão. Verifique a internet.");
             }
         }
 
@@ -183,10 +183,9 @@
                 await addDoc(collection(db, "historico"), {
                     acao: acao, placa: ATUAL?.placa || 'N/A', usuario: USUARIO_EMAIL, detalhes: detalhes, data_hora: serverTimestamp()
                 });
-            } catch(e) { console.log("Erro log histórico:", e); }
+            } catch(e) {}
         }
 
-        // INTERFACE
         function atualizarInterface() {
             const total = CACHE.length;
             const patio = CACHE.filter(v => v.status === 'No Pátio').length;
@@ -199,7 +198,6 @@
             document.getElementById('stat-liberado').innerText = liberado;
             document.getElementById('stat-audit').innerText = conferido + ` / ${patio}`;
             document.getElementById('stat-audit-perc').innerText = `(${perc}%)`;
-
             aplicarFiltros();
         }
 
@@ -211,16 +209,12 @@
             FILTRO_ATUAL = btn.dataset.filter;
             aplicarFiltros();
         });
-
         document.getElementById('campo-busca').onkeyup = aplicarFiltros;
 
         function aplicarFiltros() {
             const termo = document.getElementById('campo-busca').value.toLowerCase();
             const filtrados = CACHE.filter(v => {
-                const texto = (
-                    (v.placa||'') + (v.modelo||'') + (v.boe||'') + (v.cor||'') + (v.processo||'')
-                ).toLowerCase();
-                
+                const texto = ((v.placa||'') + (v.modelo||'') + (v.boe||'') + (v.cor||'') + (v.processo||'')).toLowerCase();
                 if(!texto.includes(termo)) return false;
                 if(FILTRO_ATUAL === 'patio' && v.status !== 'No Pátio') return false;
                 if(FILTRO_ATUAL === 'liberado' && v.status !== 'Liberado') return false;
@@ -240,10 +234,20 @@
                 let borda = v.status === 'No Pátio' ? (v.verificado ? 'border-emerald-500 border-l-4' : 'border-slate-200') : 'border-slate-200 opacity-70';
                 let selo = v.verificado && v.status==='No Pátio' ? '<div class="absolute right-0 top-0 bg-emerald-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-bl-lg"><i class="ph-bold ph-check"></i> OK</div>' : '';
                 
+                // DATA FORMATADA PARA A LISTA
+                let dataTexto = "";
+                if(v.data_entrada && v.data_entrada.seconds) {
+                    const dataObj = new Date(v.data_entrada.seconds * 1000);
+                    dataTexto = dataObj.toLocaleDateString('pt-BR');
+                }
+
                 card.className = `bg-white p-5 rounded-xl border ${borda} shadow-sm hover:shadow-md relative overflow-hidden group cursor-pointer`;
                 card.innerHTML = `
                     ${selo}
-                    <div class="flex justify-between items-start mb-2 mt-1"><h3 class="text-lg font-black text-slate-800 font-mono tracking-wide group-hover:text-blue-600 transition">${v.placa}</h3>${v.status !== 'No Pátio' ? '<span class="text-[9px] font-bold bg-slate-100 px-1.5 rounded">LIBERADO</span>':''}</div>
+                    <div class="flex justify-between items-start mb-2 mt-1">
+                        <h3 class="text-lg font-black text-slate-800 font-mono tracking-wide group-hover:text-blue-600 transition">${v.placa}</h3>
+                        ${v.status !== 'No Pátio' ? '<span class="text-[9px] font-bold bg-slate-100 px-1.5 rounded">LIBERADO</span>' : (dataTexto ? `<span class="text-[9px] text-slate-400 font-bold">${dataTexto}</span>` : '')}
+                    </div>
                     <div class="text-xs font-bold text-slate-500 flex items-center gap-2 mb-3">${v.modelo||'N/I'}<span class="bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">${v.cor||'COR N/I'}</span></div>
                     <div class="flex gap-2 pt-3 border-t border-slate-50">${v.boe ? `<span class="text-[9px] font-bold text-slate-400 bg-slate-50 px-1.5 rounded">BOE: ${v.boe}</span>`:''}</div>
                 `;
@@ -252,14 +256,26 @@
             });
         }
 
-        // MODAL E EDIÇÃO
+        // MODAL
         function abrirModal(v) {
             ATUAL = v; ATUAL_ID = v.id; EDITING = false;
             atualizarModoEdicao(); renderBotaoAuditoria();
+            
+            // Preencher campos
             ['placa','niba','status','modelo','marca','cor','tipo','infracao','boe','processo','obs'].forEach(k => {
                 const key = k==='obs'?'observacoes':k;
                 document.getElementById('in-'+k).value = v[key] || '';
             });
+
+            // Mostrar Data de Entrada no Modal
+            const labelData = document.getElementById('texto-data-entrada');
+            if(v.data_entrada && v.data_entrada.seconds) {
+                const dt = new Date(v.data_entrada.seconds * 1000);
+                labelData.innerText = "Entrada no sistema: " + dt.toLocaleString('pt-BR');
+            } else {
+                labelData.innerText = "Data de entrada não registrada.";
+            }
+
             renderGaleria();
             document.getElementById('lista-historico').classList.add('hidden');
             document.getElementById('modal').classList.remove('hidden');
@@ -267,6 +283,9 @@
 
         function renderBotaoAuditoria() {
             const btn = document.getElementById('btn-auditoria');
+            // GARANTE QUE O BOTÃO FUNCIONE
+            btn.onclick = window.alternarConferencia; 
+            
             if(ATUAL.verificado) {
                 btn.className = "w-full py-4 rounded-lg font-bold uppercase text-xs tracking-widest flex items-center justify-center gap-2 transition shadow-md bg-emerald-600 text-white hover:bg-emerald-700";
                 btn.innerHTML = '<i class="ph-bold ph-check-circle text-xl"></i> CONFERIDO NO PÁTIO';
@@ -276,17 +295,22 @@
             }
         }
 
+        // 2. CORREÇÃO DA FUNÇÃO CONFERIR
         window.alternarConferencia = async () => {
-            ATUAL.verificado = !ATUAL.verificado;
+            if(!ATUAL || !ATUAL_ID) return; // Segurança
+            ATUAL.verificado = !ATUAL.verificado; // Inverte local
+            renderBotaoAuditoria(); // Atualiza botão visualmente na hora
+            
+            // Salva no banco
             await updateDoc(doc(db, "veiculos", ATUAL_ID), { verificado: ATUAL.verificado });
             registrarHistorico('Auditoria', ATUAL.verificado ? 'Conferido' : 'Pendente');
-            renderBotaoAuditoria(); carregarDados();
+            
+            // Atualiza lista de fundo
+            carregarDados();
         }
 
-        // BOTÕES E AÇÕES
         document.getElementById('btn-fechar').onclick = () => document.getElementById('modal').classList.add('hidden');
         document.getElementById('modal-overlay').onclick = () => document.getElementById('modal').classList.add('hidden');
-        
         document.getElementById('btn-editar').onclick = () => { EDITING = !EDITING; atualizarModoEdicao(); };
 
         function atualizarModoEdicao() {
@@ -315,10 +339,18 @@
             alert("Salvo!"); document.getElementById('modal').classList.add('hidden'); carregarDados();
         }
 
+        // 3. REGISTRO COM DATA DE ENTRADA (TIMESTAMP)
         document.getElementById('btn-novo').onclick = async () => {
             const p = prompt("Placa do novo veículo:"); if(!p) return;
-            // Cria um ID único usando timestamp
-            const novo = { placa: p.toUpperCase(), status: 'No Pátio', fotos: [], verificado: false, modelo: '', cor: '' };
+            const novo = { 
+                placa: p.toUpperCase(), 
+                status: 'No Pátio', 
+                fotos: [], 
+                verificado: false, 
+                modelo: '', 
+                cor: '',
+                data_entrada: serverTimestamp() // Salva a hora do servidor Google
+            };
             await addDoc(collection(db, "veiculos"), novo);
             await registrarHistorico('Criação', 'Novo veículo: ' + p);
             carregarDados();
@@ -331,7 +363,6 @@
             document.getElementById('modal').classList.add('hidden'); carregarDados();
         }
 
-        // FOTOS (STORAGE)
         function renderGaleria() {
             const div = document.getElementById('galeria'); div.innerHTML = '';
             (ATUAL.fotos || []).forEach((url, i) => {
@@ -363,36 +394,26 @@
             ATUAL.fotos = novas; renderGaleria();
         }
 
-        // EXCEL E HISTÓRICO
         document.getElementById('btn-backup').onclick = async () => {
             if(!confirm("Gerar Planilha Completa?")) return;
             const dadosLimpos = CACHE.map(v => ({
-                "PLACA": v.placa, "STATUS": v.status, "AUDITORIA": v.verificado?"OK":"-", "MODELO": v.modelo, "MARCA": v.marca, "COR": v.cor, "BOE": v.boe, "PROC": v.processo, "OBS": v.observacoes, "NIBA": v.niba
+                "PLACA": v.placa, 
+                "DATA_ENTRADA": v.data_entrada?.seconds ? new Date(v.data_entrada.seconds*1000).toLocaleDateString() : '-',
+                "STATUS": v.status, 
+                "AUDITORIA": v.verificado?"OK":"-", 
+                "MODELO": v.modelo, "MARCA": v.marca, "COR": v.cor, "BOE": v.boe, "PROC": v.processo, "OBS": v.observacoes, "NIBA": v.niba
             }));
             const ws = XLSX.utils.json_to_sheet(dadosLimpos);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Inventario_Patio");
-            
-            // Tenta pegar histórico
             try {
-                // Se der erro de índice no orderby, tenta sem
-                try {
-                    const qHist = query(collection(db, "historico"), orderBy("data_hora", "desc"));
-                    const snapHist = await getDocs(qHist);
-                    const histData = [];
-                    snapHist.forEach(d => histData.push({ ...d.data(), data_hora: d.data().data_hora?.toDate ? d.data().data_hora.toDate().toLocaleString() : '-' }));
-                    const wsHist = XLSX.utils.json_to_sheet(histData);
-                    XLSX.utils.book_append_sheet(wb, wsHist, "Historico");
-                } catch(e) {
-                     const qHist = collection(db, "historico");
-                     const snapHist = await getDocs(qHist);
-                     const histData = [];
-                     snapHist.forEach(d => histData.push(d.data()));
-                     const wsHist = XLSX.utils.json_to_sheet(histData);
-                     XLSX.utils.book_append_sheet(wb, wsHist, "Historico");
-                }
+                 const qHist = collection(db, "historico");
+                 const snapHist = await getDocs(qHist);
+                 const histData = [];
+                 snapHist.forEach(d => histData.push(d.data()));
+                 const wsHist = XLSX.utils.json_to_sheet(histData);
+                 XLSX.utils.book_append_sheet(wb, wsHist, "Historico");
             } catch(e){}
-
             XLSX.writeFile(wb, `SGP_Patio_${new Date().toISOString().split('T')[0]}.xlsx`);
         }
 
@@ -400,17 +421,17 @@
             const el = document.getElementById('lista-historico');
             if(!el.classList.contains('hidden')) { el.classList.add('hidden'); return; }
             el.innerHTML = 'Carregando...'; el.classList.remove('hidden');
-            
             let hist = [];
-            // Tenta trazer ordenado, se falhar (índice), traz tudo e filtra
             try {
-                const q = query(collection(db, "historico"), orderBy("data_hora", "desc"));
-                const snapshot = await getDocs(q);
-                snapshot.forEach(doc => { const d = doc.data(); if(d.placa===ATUAL.placa) hist.push(d); });
-            } catch (e) {
                 const snapshot = await getDocs(collection(db, "historico"));
                 snapshot.forEach(doc => { const d = doc.data(); if(d.placa===ATUAL.placa) hist.push(d); });
-            }
+                // Ordena historico por data desc (local)
+                hist.sort((a,b) => {
+                   const dA = a.data_hora?.seconds || 0;
+                   const dB = b.data_hora?.seconds || 0;
+                   return dB - dA;
+                });
+            } catch (e) { console.log(e); }
             
             if(!hist.length) el.innerHTML = 'Nada recente.';
             else el.innerHTML = hist.slice(0,5).map(h => {
