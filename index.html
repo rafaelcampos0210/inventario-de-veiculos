@@ -7,363 +7,417 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     
     <style>
-        body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .no-scroll::-webkit-scrollbar { display: none; }
-        #corpo-site { opacity: 0; transition: opacity 0.5s; }
-        
+        #conteudo-principal { display: none; } 
         .modal-up { animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        
         .input-box { width: 100%; background: transparent; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; font-size: 0.95rem; color: #1e293b; font-weight: 500; }
-        .input-box:read-only { background-color: #f8fafc; border-color: transparent; color: #64748b; }
+        .input-box:read-only { background-color: #f1f5f9; border-color: transparent; color: #64748b; }
         .editing .input-box { background-color: #fff; border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
         .btn-trash { display: none !important; }
         .editing .btn-trash { display: flex !important; }
+        .filter-btn.active { background-color: #1e293b; color: white; border-color: #1e293b; }
     </style>
 </head>
-<body class="text-slate-800 pb-28" id="corpo-site">
+<body class="text-slate-800 pb-32">
 
-    <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-md border-b border-slate-700">
-        <div class="max-w-3xl mx-auto px-4 h-16 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <i class="ph-bold ph-police-car text-2xl text-blue-400"></i>
-                <div>
-                    <h1 class="text-sm font-black tracking-widest uppercase">Pátio 116ª DP</h1>
-                    <p class="text-[10px] text-slate-400">SISTEMA SEGURO</p>
+    <div id="tela-loading" class="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center z-[999] text-white">
+        <i class="ph-bold ph-spinner animate-spin text-4xl mb-4 text-orange-500"></i>
+        <p class="text-xs font-bold tracking-widest uppercase">Conectando ao Google...</p>
+    </div>
+
+    <div id="conteudo-principal">
+        <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-xl border-b border-slate-700">
+            <div class="max-w-4xl mx-auto px-4 h-16 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white/10 p-2 rounded-lg"><i class="ph-bold ph-police-car text-xl text-blue-400"></i></div>
+                    <div><h1 class="text-sm font-black tracking-widest uppercase">Pátio 116ª DP</h1><p class="text-[10px] text-slate-400">Firebase System</p></div>
+                </div>
+                <div class="flex gap-2">
+                    <button id="btn-backup" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-600 flex gap-2 items-center transition" title="Gerar Planilha"><i class="ph-bold ph-table text-lg"></i> <span class="hidden sm:inline">GERAR PLANILHA</span></button>
+                    <button id="btn-novo" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold uppercase flex items-center gap-2 transition active:scale-95"><i class="ph-bold ph-plus"></i> Novo</button>
+                    <button id="btn-sair" class="bg-red-900/50 hover:bg-red-800 text-white p-2 rounded-lg border border-red-900 transition"><i class="ph-bold ph-sign-out text-lg"></i></button>
                 </div>
             </div>
-            <div class="flex gap-2">
-                <button onclick="baixarExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-xs font-bold transition border border-emerald-700 shadow-lg flex items-center gap-1" title="Gerar Relatório Corrigido">
-                    <i class="ph-bold ph-file-xls text-lg"></i> <span class="hidden sm:inline">Excel</span>
-                </button>
+        </header>
 
-                <button id="btn-novo" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded text-xs font-bold uppercase shadow-lg flex items-center gap-2 transition active:scale-95">
-                    <i class="ph-bold ph-plus"></i> Novo
-                </button>
-                
-                <button onclick="window.sair()" class="bg-red-900/50 hover:bg-red-800 text-white p-2 rounded text-xs font-bold transition border border-red-900 ml-1" title="Sair">
-                    <i class="ph-bold ph-sign-out text-lg"></i>
-                </button>
+        <main class="max-w-4xl mx-auto p-4">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><p class="text-[10px] font-bold text-slate-400 uppercase">Total Geral</p><p class="text-2xl font-black text-slate-800 mt-1" id="stat-total">-</p></div>
+                <div class="bg-white p-4 rounded-xl border-l-4 border-red-500 shadow-sm"><p class="text-[10px] font-bold text-red-500 uppercase">No Pátio</p><p class="text-2xl font-black text-slate-800 mt-1" id="stat-patio">-</p></div>
+                <div class="bg-white p-4 rounded-xl border-l-4 border-emerald-500 shadow-sm"><p class="text-[10px] font-bold text-emerald-600 uppercase">Liberados</p><p class="text-2xl font-black text-slate-800 mt-1" id="stat-liberado">-</p></div>
+                <div class="bg-white p-4 rounded-xl border-l-4 border-yellow-400 shadow-sm"><p class="text-[10px] font-bold text-yellow-600 uppercase">Auditados</p><div class="flex gap-1 mt-1"><span class="text-2xl font-black text-slate-800" id="stat-audit">-</span><span class="text-xs font-bold text-slate-400" id="stat-audit-perc">%</span></div></div>
             </div>
-        </div>
-    </header>
 
-    <main class="max-w-3xl mx-auto p-4">
-        <div class="grid grid-cols-2 gap-3 mb-6">
-            <div class="bg-white p-4 rounded border-l-4 border-slate-800 shadow-sm">
-                <p class="text-[10px] font-bold text-slate-400 uppercase">No Pátio</p>
-                <p class="text-3xl font-black text-slate-800 mt-1" id="stat-patio">-</p>
+            <div class="flex gap-2 mb-4 overflow-x-auto pb-2 no-scroll" id="area-filtros">
+                <button data-filter="todos" class="filter-btn active px-4 py-2 rounded-full text-xs font-bold uppercase border border-slate-300 bg-white text-slate-600 whitespace-nowrap transition shadow-sm">Todos</button>
+                <button data-filter="patio" class="filter-btn px-4 py-2 rounded-full text-xs font-bold uppercase border border-red-200 bg-red-50 text-red-600 whitespace-nowrap transition shadow-sm">🔒 Só Apreendidos</button>
+                <button data-filter="liberado" class="filter-btn px-4 py-2 rounded-full text-xs font-bold uppercase border border-emerald-200 bg-emerald-50 text-emerald-600 whitespace-nowrap transition shadow-sm">✅ Só Liberados</button>
+                <button data-filter="pendente" class="filter-btn px-4 py-2 rounded-full text-xs font-bold uppercase border border-yellow-200 bg-yellow-50 text-yellow-600 whitespace-nowrap transition shadow-sm">⚠️ Falta Auditar</button>
             </div>
-            <div class="bg-white p-4 rounded border-l-4 border-emerald-500 shadow-sm">
-                <p class="text-[10px] font-bold text-slate-400 uppercase">Liberados</p>
-                <p class="text-3xl font-black text-emerald-600 mt-1" id="stat-liberado">-</p>
+
+            <div class="relative mb-6 group">
+                <i class="ph-bold ph-magnifying-glass absolute left-4 top-3.5 text-slate-400 group-focus-within:text-blue-600 transition"></i>
+                <input type="text" id="campo-busca" class="w-full pl-11 pr-4 py-3 bg-white border-none rounded-xl shadow-sm outline-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-medium placeholder:text-slate-400 transition" placeholder="Pesquisar Placa, BOE, Cor, Processo...">
             </div>
-        </div>
 
-        <div class="relative mb-6">
-            <input type="text" id="campo-busca" class="w-full pl-4 pr-4 py-3 bg-white border-none rounded shadow-sm outline-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-medium placeholder:text-slate-400" placeholder="🔍 Pesquisar Placa, BOE...">
-        </div>
-
-        <div id="lista-container" class="space-y-4">
-            <div class="text-center py-10 text-slate-400 text-xs font-bold uppercase animate-pulse">Carregando Banco de Dados...</div>
-        </div>
-    </main>
+            <div id="lista-container" class="space-y-3 pb-10 text-center py-10 text-slate-400 text-xs font-bold uppercase animate-pulse">Carregando Banco de Dados...</div>
+        </main>
+    </div>
 
     <div id="modal" class="fixed inset-0 z-[100] hidden flex flex-col">
-        <div class="absolute inset-0 bg-slate-900/90 backdrop-blur-sm transition-opacity" id="modal-overlay"></div>
+        <div class="absolute inset-0 bg-slate-900/90 backdrop-blur-sm" id="modal-overlay"></div>
         <div class="absolute inset-x-0 bottom-0 top-0 md:top-10 md:inset-x-auto md:right-0 md:w-[600px] bg-slate-50 md:rounded-l-2xl shadow-2xl overflow-hidden flex flex-col modal-up">
-            
             <div class="bg-white px-5 py-3 border-b border-slate-200 flex justify-between items-center sticky top-0 z-10 shadow-sm">
-                <button id="btn-fechar" class="text-slate-400 hover:text-slate-700 p-2"><i class="ph-bold ph-x text-2xl"></i></button>
+                <button id="btn-fechar" class="text-slate-400 hover:text-slate-700 p-2 rounded-full hover:bg-slate-100 transition"><i class="ph-bold ph-x text-xl"></i></button>
                 <span class="text-xs font-black text-slate-500 uppercase tracking-widest">PRONTUÁRIO</span>
-                <button id="btn-editar" class="text-blue-600 bg-blue-50 border border-blue-100 px-4 py-2 rounded text-xs font-bold uppercase flex items-center gap-2 active:scale-95 transition">
-                    <i class="ph-bold ph-pencil-simple"></i> Editar
-                </button>
+                <button id="btn-editar" class="text-blue-600 bg-blue-50 border border-blue-100 px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-2 active:scale-95 transition hover:bg-blue-100"><i class="ph-bold ph-pencil-simple"></i> Editar</button>
             </div>
-
-            <div class="flex-1 overflow-y-auto p-5 space-y-8 bg-slate-50" id="area-formulario">
-                <input type="hidden" id="in-id">
+            <div class="flex-1 overflow-y-auto p-5 space-y-6 bg-slate-50" id="area-formulario">
                 
-                <div class="space-y-3">
-                    <div class="flex justify-between items-end">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Fotos</label>
-                        <label class="bg-slate-900 text-white px-3 py-1.5 rounded text-[10px] font-bold uppercase cursor-pointer flex items-center gap-2 shadow hover:bg-slate-800 transition active:scale-95">
-                            <i class="ph-bold ph-camera text-lg"></i> Adicionar
-                            <input type="file" id="input-camera" accept="image/*" class="hidden">
-                        </label>
-                    </div>
-                    <div id="galeria" class="flex gap-3 overflow-x-auto pb-4 no-scroll snap-x min-h-[100px]"></div>
-                    <p id="status-upload" class="hidden text-center text-[10px] font-bold text-blue-600 animate-pulse bg-blue-50 py-2 rounded border border-blue-100">Enviando...</p>
+                <div class="bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+                    <button id="btn-auditoria" class="w-full py-4 rounded-lg font-bold uppercase text-xs tracking-widest flex items-center justify-center gap-3 transition active:scale-[0.98]"></button>
+                </div>
+                
+                <div class="space-y-2">
+                    <div class="flex justify-between items-end px-1"><label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Fotos</label><label class="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase cursor-pointer flex items-center gap-2 shadow hover:bg-slate-800 transition active:scale-95"><i class="ph-bold ph-camera text-lg"></i> Adicionar<input type="file" id="input-camera" accept="image/*" class="hidden"></label></div>
+                    <div id="galeria" class="flex gap-3 overflow-x-auto pb-4 pt-1 px-1 no-scroll snap-x min-h-[110px]"></div>
+                    <p id="status-upload" class="hidden text-center text-[10px] font-bold text-blue-600 animate-pulse bg-blue-50 py-2 rounded border border-blue-100">Enviando imagem...</p>
                 </div>
 
-                <div class="bg-white p-6 rounded border border-slate-200 shadow-sm relative overflow-hidden">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
                     <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-600"></div>
-                    <div class="grid grid-cols-2 gap-6 mb-5">
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Placa</label><input id="in-placa" class="input-box text-3xl font-mono font-black uppercase text-slate-900 tracking-widest p-0 border-none bg-transparent" readonly></div>
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">NIBA</label><input id="in-niba" class="input-box font-mono text-blue-600 font-bold bg-blue-50 border-blue-100" readonly></div>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Situação</label>
-                        <select id="in-status" class="input-box font-bold bg-slate-100 border-transparent text-slate-700" disabled>
-                            <option value="No Pátio">🔒 APREENDIDO NO PÁTIO</option>
-                            <option value="Liberado">✅ LIBERADO / ENTREGUE</option>
-                        </select>
-                    </div>
+                    <div class="grid grid-cols-2 gap-5 mb-4"><div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Placa</label><input id="in-placa" class="input-box text-3xl font-mono font-black uppercase text-slate-900 tracking-widest p-0 border-none bg-transparent" readonly></div><div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">NIBA</label><input id="in-niba" class="input-box font-mono text-blue-600 font-bold bg-blue-50 border-blue-100" readonly></div></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Status Atual</label><select id="in-status" class="input-box font-bold bg-slate-100 border-transparent text-slate-700" disabled><option value="No Pátio">🔒 APREENDIDO (NO PÁTIO)</option><option value="Liberado">✅ LIBERADO / ENTREGUE</option></select></div>
                 </div>
 
-                <div class="space-y-4">
-                    <h3 class="text-xs font-bold text-slate-900 uppercase border-b border-slate-200 pb-2">Veículo</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Modelo</label><input id="in-modelo" class="input-box" readonly></div>
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Marca</label><input id="in-marca" class="input-box" readonly></div>
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Cor</label><input id="in-cor" class="input-box" readonly></div>
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Tipo</label><input id="in-tipo" class="input-box" readonly></div>
-                    </div>
-                </div>
-
-                <div class="space-y-4">
-                    <h3 class="text-xs font-bold text-slate-900 uppercase border-b border-slate-200 pb-2">Jurídico</h3>
-                    <div class="bg-red-50 p-3 rounded border border-red-100">
-                        <label class="text-[10px] font-bold text-red-400 uppercase block mb-1">Infração</label>
-                        <input id="in-infracao" class="input-box text-red-700 font-bold bg-transparent border-none p-0 uppercase" readonly>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">BOE</label><input id="in-boe" class="input-box" readonly></div>
-                        <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Processo</label><input id="in-processo" class="input-box" readonly></div>
-                    </div>
-                    <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Observações</label><textarea id="in-obs" rows="4" class="input-box resize-none leading-relaxed" readonly></textarea></div>
+                <div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Modelo</label><input id="in-modelo" class="input-box" readonly></div><div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Marca</label><input id="in-marca" class="input-box" readonly></div><div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Cor</label><input id="in-cor" class="input-box" readonly></div><div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Tipo</label><input id="in-tipo" class="input-box" readonly></div></div>
+                <div class="bg-red-50 p-3 rounded-lg border border-red-100"><label class="text-[10px] font-bold text-red-400 uppercase block mb-1">Infração Penal</label><input id="in-infracao" class="input-box text-red-700 font-bold bg-transparent border-none p-0 uppercase" readonly></div>
+                <div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1">BOE</label><input id="in-boe" class="input-box" readonly></div><div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Processo / VPI</label><input id="in-processo" class="input-box" readonly></div></div>
+                <div><label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Observações e Histórico</label><textarea id="in-obs" rows="5" class="input-box resize-none leading-relaxed" readonly></textarea></div>
+                
+                <div class="border-t border-slate-200 pt-4 mt-4">
+                    <button id="btn-ver-historico" class="text-xs text-blue-600 font-bold hover:underline flex items-center gap-1"><i class="ph-bold ph-clock-counter-clockwise"></i> Ver Histórico de Alterações</button>
+                    <div id="lista-historico" class="hidden mt-3 space-y-2 text-[10px] text-slate-500 bg-slate-100 p-3 rounded-lg"></div>
                 </div>
             </div>
 
             <div id="barra-acoes" class="p-5 bg-white border-t border-slate-200 hidden flex-col gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-                <button id="btn-salvar" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded shadow-lg uppercase text-xs tracking-widest active:scale-[0.98] transition">Salvar Alterações</button>
-                <button id="btn-excluir-veiculo" class="w-full bg-white border border-red-200 text-red-600 hover:bg-red-50 font-bold py-3 rounded transition uppercase text-xs tracking-widest flex items-center justify-center gap-2 active:scale-[0.98]"><i class="ph-bold ph-trash"></i> EXCLUIR VEÍCULO</button>
+                <button id="btn-salvar" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-lg shadow-lg uppercase text-xs tracking-widest active:scale-[0.98] transition flex justify-center gap-2 items-center"><i class="ph-bold ph-floppy-disk text-lg"></i> SALVAR</button>
+                <button id="btn-excluir" class="w-full bg-white border border-red-200 text-red-600 hover:bg-red-50 font-bold py-3 rounded-lg uppercase text-xs tracking-widest flex items-center justify-center gap-2 active:scale-[0.98] transition"><i class="ph-bold ph-trash text-lg"></i> EXCLUIR</button>
             </div>
         </div>
     </div>
 
-    <script>
-        const SUPABASE_URL = 'https://newbrgjewjnebfnhumci.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ld2JyZ2pld2puZWJmbmh1bWNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1NDcyMTAsImV4cCI6MjA4MTEyMzIxMH0.Z_AE5HnKxIwNni9RXgI1aGViJX2v_4Z0Nd5uMEqIue4';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+        // SUA CONFIGURAÇÃO DO FIREBASE (JÁ INSERIDA)
+        const firebaseConfig = {
+            apiKey: "AIzaSyA-q94iSIsQuRl1xS1S8vw2RkDAxMzZoLk",
+            authDomain: "sgp-patio.firebaseapp.com",
+            projectId: "sgp-patio",
+            storageBucket: "sgp-patio.firebasestorage.app",
+            messagingSenderId: "264796636092",
+            appId: "1:264796636092:web:91d69d0853df208c9761b9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
 
         let CACHE = [];
         let ATUAL = null;
+        let ATUAL_ID = null;
         let EDITING = false;
+        let FILTRO_ATUAL = 'todos';
+        let USUARIO_EMAIL = '';
 
-        async function verificarSeguranca() {
-            const { data } = await supabase.auth.getSession();
-            if (!data.session) window.location.href = 'login.html';
+        // SEGURANÇA E LOGIN
+        onAuthStateChanged(auth, (user) => {
+            if (!user) window.location.href = "login.html";
             else {
-                document.getElementById('corpo-site').style.opacity = '1';
+                USUARIO_EMAIL = user.email;
+                document.getElementById('tela-loading').style.display = 'none';
+                document.getElementById('conteudo-principal').style.display = 'block';
                 carregarDados();
             }
-        }
+        });
 
-        window.sair = async () => { await supabase.auth.signOut(); window.location.href = 'login.html'; }
+        document.getElementById('btn-sair').onclick = () => signOut(auth);
 
-        // --- ROBÔ DE EXPORTAÇÃO INTELIGENTE ---
-        window.baixarExcel = async function() {
-            if(!confirm("Gerar relatório Excel com correção automática de dados dos PDFs?")) return;
-            
-            const { data, error } = await supabase.from('veiculos').select('*');
-            if(error) return alert("Erro: " + error.message);
-
-            // AQUI ESTÁ A MÁGICA DE LIMPEZA
-            const dadosLimpos = data.map(v => {
-                let obs = v.observacoes || "";
-                let boe = v.boe;
-                let proc = v.processo;
-                let infr = v.infracao;
-                let modelo = v.modelo;
-
-                // Se o BOE estiver vazio, tenta caçar dentro da Observação
-                if (!boe && obs.includes("BOE")) {
-                    const match = obs.match(/BOE\s*:?\s*([0-9]{2,}[A-Z]{1}[0-9]+)/i);
-                    if (match) boe = match[1];
-                }
-
-                // Tenta achar VPI ou SEI se Processo estiver vazio
-                if (!proc) {
-                    const matchVPI = obs.match(/(VPI|SEI|APFD)\s*:?\s*([0-9.\-/]+)/i);
-                    if (matchVPI) proc = `${matchVPI[1]} ${matchVPI[2]}`;
-                }
-
-                // Tenta achar Infração comum
-                if (!infr || infr === "VERIFICAR PRONTUÁRIO") {
-                    if (obs.match(/ROUBO|FURTO/i)) infr = "ROUBO/FURTO";
-                    else if (obs.match(/EMBRIAGUEZ/i)) infr = "EMBRIAGUEZ";
-                    else if (obs.match(/ADULTERA|CLONAGEM/i)) infr = "ADULTERAÇÃO";
-                    else if (obs.match(/ACIDENTE/i)) infr = "ACIDENTE";
-                }
-
-                // Retorna a linha limpa para o Excel
-                return {
-                    "PLACA": v.placa,
-                    "STATUS": v.status,
-                    "MODELO": modelo,
-                    "MARCA": v.marca,
-                    "COR": v.cor,
-                    "NIBA": v.niba,
-                    "BOE (CORRIGIDO)": boe || "N/I",
-                    "PROCESSO (CORRIGIDO)": proc || "N/I",
-                    "INFRAÇÃO (CORRIGIDA)": infr || "N/I",
-                    "OBSERVAÇÕES ORIGINAIS": obs
-                };
-            });
-
-            const ws = XLSX.utils.json_to_sheet(dadosLimpos);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Inventario_116DP");
-            XLSX.writeFile(wb, "Relatorio_Patio_116DP.xlsx");
-        }
-
+        // CRUD FIREBASE
         async function carregarDados() {
             try {
-                const { data, error } = await supabase.from('veiculos').select('*').order('id', { ascending: false });
-                if (error) throw error;
-                CACHE = data;
-                document.getElementById('stat-patio').innerText = CACHE.filter(v => v.status === 'No Pátio').length;
-                document.getElementById('stat-liberado').innerText = CACHE.filter(v => v.status === 'Liberado').length;
-                desenharLista(data);
-            } catch (erro) {
-                document.getElementById('lista-container').innerHTML = '<p class="text-center text-red-500 font-bold p-10">Erro de conexão.</p>';
+                // Tenta carregar ordenado (pode precisar de índice)
+                // Se der erro de índice, carrega sem ordem e ordena no front
+                try {
+                    const q = query(collection(db, "veiculos"), orderBy("placa"));
+                    const querySnapshot = await getDocs(q);
+                    CACHE = [];
+                    querySnapshot.forEach((doc) => { CACHE.push({ id: doc.id, ...doc.data() }); });
+                } catch(errIdx) {
+                    const querySnapshot = await getDocs(collection(db, "veiculos"));
+                    CACHE = [];
+                    querySnapshot.forEach((doc) => { CACHE.push({ id: doc.id, ...doc.data() }); });
+                    CACHE.sort((a,b) => (a.placa || "").localeCompare(b.placa || ""));
+                }
+                atualizarInterface();
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao carregar dados. Verifique a internet.");
             }
+        }
+
+        async function registrarHistorico(acao, detalhes) {
+            try {
+                await addDoc(collection(db, "historico"), {
+                    acao: acao, placa: ATUAL?.placa || 'N/A', usuario: USUARIO_EMAIL, detalhes: detalhes, data_hora: serverTimestamp()
+                });
+            } catch(e) { console.log("Erro log histórico:", e); }
+        }
+
+        // INTERFACE
+        function atualizarInterface() {
+            const total = CACHE.length;
+            const patio = CACHE.filter(v => v.status === 'No Pátio').length;
+            const liberado = CACHE.filter(v => v.status === 'Liberado').length;
+            const conferido = CACHE.filter(v => v.verificado && v.status === 'No Pátio').length;
+            const perc = patio > 0 ? Math.round((conferido / patio) * 100) : 0;
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-patio').innerText = patio;
+            document.getElementById('stat-liberado').innerText = liberado;
+            document.getElementById('stat-audit').innerText = conferido + ` / ${patio}`;
+            document.getElementById('stat-audit-perc').innerText = `(${perc}%)`;
+
+            aplicarFiltros();
+        }
+
+        // BUSCA E FILTROS
+        const botoesFiltro = document.querySelectorAll('.filter-btn');
+        botoesFiltro.forEach(btn => btn.onclick = () => {
+            botoesFiltro.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            FILTRO_ATUAL = btn.dataset.filter;
+            aplicarFiltros();
+        });
+
+        document.getElementById('campo-busca').onkeyup = aplicarFiltros;
+
+        function aplicarFiltros() {
+            const termo = document.getElementById('campo-busca').value.toLowerCase();
+            const filtrados = CACHE.filter(v => {
+                const texto = (
+                    (v.placa||'') + (v.modelo||'') + (v.boe||'') + (v.cor||'') + (v.processo||'')
+                ).toLowerCase();
+                
+                if(!texto.includes(termo)) return false;
+                if(FILTRO_ATUAL === 'patio' && v.status !== 'No Pátio') return false;
+                if(FILTRO_ATUAL === 'liberado' && v.status !== 'Liberado') return false;
+                if(FILTRO_ATUAL === 'pendente' && (v.status !== 'No Pátio' || v.verificado)) return false;
+                return true;
+            });
+            desenharLista(filtrados);
         }
 
         function desenharLista(lista) {
             const container = document.getElementById('lista-container');
             container.innerHTML = '';
-            if (lista.length === 0) {
-                container.innerHTML = '<div class="text-center py-10 text-slate-400 font-bold">NENHUM REGISTRO</div>';
-                return;
-            }
+            if (lista.length === 0) { container.innerHTML = '<div class="text-center py-10 text-slate-400 font-bold">NENHUM REGISTRO</div>'; return; }
+            
             lista.forEach(v => {
                 const card = document.createElement('div');
-                const isPatio = v.status === 'No Pátio';
-                const badge = isPatio ? 'text-red-600 bg-red-50 border-red-100' : 'text-emerald-600 bg-emerald-50 border-emerald-100';
-                card.className = "bg-white p-5 rounded border border-slate-200 shadow-sm hover:border-blue-400 transition";
-                card.innerHTML = `
-                    <div class="flex justify-between items-start mb-2"><h3 class="text-xl font-black text-slate-800 font-mono tracking-wide">${v.placa}</h3><span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase border ${badge}">${isPatio ? 'Apreendido' : 'Liberado'}</span></div>
-                    <div class="text-sm font-bold text-slate-600 flex items-center gap-2 mb-4">${v.modelo || 'MODELO N/I'}<span class="text-xs font-normal text-slate-300">|</span><span class="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">${v.cor || 'COR N/I'}</span></div>
-                    <div class="flex flex-wrap gap-2 pt-3 border-t border-slate-100 mb-4">${v.boe ? `<span class="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-100">BOE: ${v.boe}</span>` : ''}</div>
-                    <button class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded text-xs uppercase tracking-widest shadow transition btn-ver">VER DETALHES</button>`;
+                let borda = v.status === 'No Pátio' ? (v.verificado ? 'border-emerald-500 border-l-4' : 'border-slate-200') : 'border-slate-200 opacity-70';
+                let selo = v.verificado && v.status==='No Pátio' ? '<div class="absolute right-0 top-0 bg-emerald-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-bl-lg"><i class="ph-bold ph-check"></i> OK</div>' : '';
                 
-                card.querySelector('.btn-ver').addEventListener('click', () => abrirModal(v));
+                card.className = `bg-white p-5 rounded-xl border ${borda} shadow-sm hover:shadow-md relative overflow-hidden group cursor-pointer`;
+                card.innerHTML = `
+                    ${selo}
+                    <div class="flex justify-between items-start mb-2 mt-1"><h3 class="text-lg font-black text-slate-800 font-mono tracking-wide group-hover:text-blue-600 transition">${v.placa}</h3>${v.status !== 'No Pátio' ? '<span class="text-[9px] font-bold bg-slate-100 px-1.5 rounded">LIBERADO</span>':''}</div>
+                    <div class="text-xs font-bold text-slate-500 flex items-center gap-2 mb-3">${v.modelo||'N/I'}<span class="bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">${v.cor||'COR N/I'}</span></div>
+                    <div class="flex gap-2 pt-3 border-t border-slate-50">${v.boe ? `<span class="text-[9px] font-bold text-slate-400 bg-slate-50 px-1.5 rounded">BOE: ${v.boe}</span>`:''}</div>
+                `;
+                card.onclick = () => abrirModal(v);
                 container.appendChild(card);
             });
         }
 
+        // MODAL E EDIÇÃO
         function abrirModal(v) {
-            ATUAL = v;
-            EDITING = false;
-            atualizarModoEdicao();
+            ATUAL = v; ATUAL_ID = v.id; EDITING = false;
+            atualizarModoEdicao(); renderBotaoAuditoria();
             ['placa','niba','status','modelo','marca','cor','tipo','infracao','boe','processo','obs'].forEach(k => {
-                const el = document.getElementById('in-' + k);
-                const key = k === 'obs' ? 'observacoes' : k;
-                if(el) el.value = ATUAL[key] || '';
+                const key = k==='obs'?'observacoes':k;
+                document.getElementById('in-'+k).value = v[key] || '';
             });
             renderGaleria();
+            document.getElementById('lista-historico').classList.add('hidden');
             document.getElementById('modal').classList.remove('hidden');
         }
 
-        function renderGaleria() {
-            const el = document.getElementById('galeria');
-            el.innerHTML = '';
-            let fotos = ATUAL.fotos || [];
-            if(fotos.length===0 && ATUAL.foto_url) fotos = [ATUAL.foto_url];
-            ATUAL.fotos = fotos;
-
-            if(fotos.length === 0) el.innerHTML = '<div class="text-[10px] font-bold text-slate-400 bg-slate-100 border border-dashed border-slate-300 p-4 rounded w-full text-center">SEM FOTOS</div>';
-            else fotos.forEach((url, i) => {
-                const d = document.createElement('div');
-                d.className = "relative w-24 h-24 bg-slate-200 rounded overflow-hidden border border-slate-300 shrink-0 shadow-sm";
-                d.innerHTML = `<img src="${url}" class="w-full h-full object-cover cursor-pointer" onclick="window.open('${url}')"><button class="btn-trash absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full items-center justify-center shadow z-10"><i class="ph-bold ph-trash text-xs"></i></button>`;
-                d.querySelector('.btn-trash').onclick = () => excluirFoto(i);
-                el.appendChild(d);
-            });
+        function renderBotaoAuditoria() {
+            const btn = document.getElementById('btn-auditoria');
+            if(ATUAL.verificado) {
+                btn.className = "w-full py-4 rounded-lg font-bold uppercase text-xs tracking-widest flex items-center justify-center gap-2 transition shadow-md bg-emerald-600 text-white hover:bg-emerald-700";
+                btn.innerHTML = '<i class="ph-bold ph-check-circle text-xl"></i> CONFERIDO NO PÁTIO';
+            } else {
+                btn.className = "w-full py-4 rounded-lg font-bold uppercase text-xs tracking-widest flex items-center justify-center gap-2 transition shadow-md bg-slate-100 text-slate-400 hover:bg-slate-200 border border-slate-200";
+                btn.innerHTML = '<i class="ph-bold ph-square text-xl"></i> MARCAR COMO CONFERIDO';
+            }
         }
+
+        window.alternarConferencia = async () => {
+            ATUAL.verificado = !ATUAL.verificado;
+            await updateDoc(doc(db, "veiculos", ATUAL_ID), { verificado: ATUAL.verificado });
+            registrarHistorico('Auditoria', ATUAL.verificado ? 'Conferido' : 'Pendente');
+            renderBotaoAuditoria(); carregarDados();
+        }
+
+        // BOTÕES E AÇÕES
+        document.getElementById('btn-fechar').onclick = () => document.getElementById('modal').classList.add('hidden');
+        document.getElementById('modal-overlay').onclick = () => document.getElementById('modal').classList.add('hidden');
+        
+        document.getElementById('btn-editar').onclick = () => { EDITING = !EDITING; atualizarModoEdicao(); };
 
         function atualizarModoEdicao() {
             const form = document.getElementById('area-formulario');
             const actions = document.getElementById('barra-acoes');
-            const btn = document.getElementById('btn-editar');
-            const inputs = form.querySelectorAll('input, select, textarea');
-            
+            const inputs = form.querySelectorAll('input:not([type=hidden]), select, textarea');
             if(EDITING) {
-                form.classList.add('editing');
-                actions.classList.remove('hidden');
-                actions.classList.add('flex');
-                btn.innerHTML = '<i class="ph-bold ph-x"></i> Cancelar';
-                inputs.forEach(i => { if(i.id !== 'in-placa') { i.removeAttribute('readonly'); i.removeAttribute('disabled'); }});
+                form.classList.add('editing'); actions.classList.remove('hidden'); actions.classList.add('flex');
+                document.getElementById('btn-editar').innerText = 'Cancelar';
+                inputs.forEach(i => { if(i.id!=='in-placa') { i.removeAttribute('readonly'); i.removeAttribute('disabled'); }});
             } else {
-                form.classList.remove('editing');
-                actions.classList.add('hidden');
-                btn.innerHTML = '<i class="ph-bold ph-pencil-simple"></i> Editar';
-                inputs.forEach(i => { i.setAttribute('readonly', true); if(i.tagName==='SELECT') i.setAttribute('disabled',true); });
+                form.classList.remove('editing'); actions.classList.add('hidden');
+                document.getElementById('btn-editar').innerHTML = '<i class="ph-bold ph-pencil-simple"></i> Editar';
+                inputs.forEach(i => { i.setAttribute('readonly',true); if(i.tagName==='SELECT') i.setAttribute('disabled',true); });
             }
         }
 
-        document.getElementById('btn-fechar').onclick = () => document.getElementById('modal').classList.add('hidden');
-        document.getElementById('modal-overlay').onclick = () => document.getElementById('modal').classList.add('hidden');
-        document.getElementById('btn-editar').onclick = () => { if(EDITING) abrirModal(ATUAL); else { EDITING=true; atualizarModoEdicao(); }};
-        
         document.getElementById('btn-salvar').onclick = async () => {
             const up = {
                 niba: document.getElementById('in-niba').value, status: document.getElementById('in-status').value, modelo: document.getElementById('in-modelo').value,
                 marca: document.getElementById('in-marca').value, cor: document.getElementById('in-cor').value, tipo: document.getElementById('in-tipo').value,
                 infracao: document.getElementById('in-infracao').value, boe: document.getElementById('in-boe').value, processo: document.getElementById('in-processo').value, observacoes: document.getElementById('in-obs').value
             };
-            const { error } = await supabase.from('veiculos').update(up).eq('id', ATUAL.id);
-            if(error) alert("Erro: " + error.message); else { alert("Salvo!"); document.getElementById('modal').classList.add('hidden'); carregarDados(); }
-        }
-
-        document.getElementById('btn-excluir-veiculo').onclick = async () => {
-            if(!confirm("⚠️ AÇÃO IRREVERSÍVEL\n\nDeseja realmente excluir este veículo?")) return;
-            const { error } = await supabase.from('veiculos').delete().eq('id', ATUAL.id);
-            if(error) alert("Erro: " + error.message); else { alert("Excluído!"); document.getElementById('modal').classList.add('hidden'); carregarDados(); }
-        }
-
-        document.getElementById('input-camera').onchange = async (e) => {
-            if(!e.target.files[0]) return;
-            document.getElementById('status-upload').classList.remove('hidden');
-            const file = e.target.files[0];
-            const name = `foto_${ATUAL.placa}_${Date.now()}.jpg`;
-            const { error } = await supabase.storage.from('patio').upload(name, file);
-            if(error) { alert("Erro Upload (Balde público?)."); document.getElementById('status-upload').classList.add('hidden'); return; }
-            const { data } = supabase.storage.from('patio').getPublicUrl(name);
-            const novas = [...(ATUAL.fotos||[]), data.publicUrl];
-            await supabase.from('veiculos').update({ fotos: novas }).eq('id', ATUAL.id);
-            ATUAL.fotos = novas; renderGaleria();
-            document.getElementById('status-upload').classList.add('hidden');
-        }
-
-        async function excluirFoto(i) {
-            if(!confirm("Apagar foto?")) return;
-            const novas = ATUAL.fotos.filter((_, idx) => idx !== i);
-            await supabase.from('veiculos').update({ fotos: novas }).eq('id', ATUAL.id);
-            ATUAL.fotos = novas; renderGaleria();
+            await updateDoc(doc(db, "veiculos", ATUAL_ID), up);
+            registrarHistorico('Edição', 'Atualizou dados');
+            alert("Salvo!"); document.getElementById('modal').classList.add('hidden'); carregarDados();
         }
 
         document.getElementById('btn-novo').onclick = async () => {
             const p = prompt("Placa do novo veículo:"); if(!p) return;
-            const { data, error } = await supabase.from('veiculos').insert([{ placa: p.toUpperCase(), status: 'No Pátio', fotos: [] }]).select();
-            if(error) alert("Erro: " + error.message); else { await carregarDados(); abrirModal(data[0]); EDITING=true; atualizarModoEdicao(); }
+            // Cria um ID único usando timestamp
+            const novo = { placa: p.toUpperCase(), status: 'No Pátio', fotos: [], verificado: false, modelo: '', cor: '' };
+            await addDoc(collection(db, "veiculos"), novo);
+            await registrarHistorico('Criação', 'Novo veículo: ' + p);
+            carregarDados();
         }
 
-        document.getElementById('campo-busca').onkeyup = (e) => {
-            const t = e.target.value.toLowerCase();
-            const f = CACHE.filter(v => (v.placa+v.modelo+v.niba+v.boe).toLowerCase().includes(t));
-            desenharLista(f);
+        document.getElementById('btn-excluir').onclick = async () => {
+            if(!confirm("Excluir definitivamente?")) return;
+            await deleteDoc(doc(db, "veiculos", ATUAL_ID));
+            registrarHistorico('Exclusão', 'Excluiu ' + ATUAL.placa);
+            document.getElementById('modal').classList.add('hidden'); carregarDados();
         }
 
-        verificarSeguranca();
+        // FOTOS (STORAGE)
+        function renderGaleria() {
+            const div = document.getElementById('galeria'); div.innerHTML = '';
+            (ATUAL.fotos || []).forEach((url, i) => {
+                const img = document.createElement('div');
+                img.className = "relative w-20 h-20 bg-slate-200 rounded shrink-0 border border-slate-300";
+                img.innerHTML = `<img src="${url}" class="w-full h-full object-cover rounded cursor-pointer" onclick="window.open('${url}')"><button class="absolute top-0 right-0 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow" onclick="delFoto(${i})">x</button>`;
+                div.appendChild(img);
+            });
+        }
+
+        document.getElementById('input-camera').onchange = async (e) => {
+            const file = e.target.files[0]; if(!file) return;
+            document.getElementById('status-upload').classList.remove('hidden');
+            const storageRef = ref(storage, 'fotos/' + ATUAL.placa + '_' + Date.now());
+            await uploadBytes(storageRef, file);
+            const url = await getDownloadURL(storageRef);
+            const novas = [...(ATUAL.fotos||[]), url];
+            await updateDoc(doc(db, "veiculos", ATUAL_ID), { fotos: novas });
+            registrarHistorico('Foto', 'Adicionou foto');
+            ATUAL.fotos = novas; renderGaleria();
+            document.getElementById('status-upload').classList.add('hidden');
+        }
+
+        window.delFoto = async (i) => {
+            if(!confirm("Apagar foto?")) return;
+            const novas = ATUAL.fotos.filter((_, idx) => idx !== i);
+            await updateDoc(doc(db, "veiculos", ATUAL_ID), { fotos: novas });
+            registrarHistorico('Foto', 'Apagou foto');
+            ATUAL.fotos = novas; renderGaleria();
+        }
+
+        // EXCEL E HISTÓRICO
+        document.getElementById('btn-backup').onclick = async () => {
+            if(!confirm("Gerar Planilha Completa?")) return;
+            const dadosLimpos = CACHE.map(v => ({
+                "PLACA": v.placa, "STATUS": v.status, "AUDITORIA": v.verificado?"OK":"-", "MODELO": v.modelo, "MARCA": v.marca, "COR": v.cor, "BOE": v.boe, "PROC": v.processo, "OBS": v.observacoes, "NIBA": v.niba
+            }));
+            const ws = XLSX.utils.json_to_sheet(dadosLimpos);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Inventario_Patio");
+            
+            // Tenta pegar histórico
+            try {
+                // Se der erro de índice no orderby, tenta sem
+                try {
+                    const qHist = query(collection(db, "historico"), orderBy("data_hora", "desc"));
+                    const snapHist = await getDocs(qHist);
+                    const histData = [];
+                    snapHist.forEach(d => histData.push({ ...d.data(), data_hora: d.data().data_hora?.toDate ? d.data().data_hora.toDate().toLocaleString() : '-' }));
+                    const wsHist = XLSX.utils.json_to_sheet(histData);
+                    XLSX.utils.book_append_sheet(wb, wsHist, "Historico");
+                } catch(e) {
+                     const qHist = collection(db, "historico");
+                     const snapHist = await getDocs(qHist);
+                     const histData = [];
+                     snapHist.forEach(d => histData.push(d.data()));
+                     const wsHist = XLSX.utils.json_to_sheet(histData);
+                     XLSX.utils.book_append_sheet(wb, wsHist, "Historico");
+                }
+            } catch(e){}
+
+            XLSX.writeFile(wb, `SGP_Patio_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        document.getElementById('btn-ver-historico').onclick = async () => {
+            const el = document.getElementById('lista-historico');
+            if(!el.classList.contains('hidden')) { el.classList.add('hidden'); return; }
+            el.innerHTML = 'Carregando...'; el.classList.remove('hidden');
+            
+            let hist = [];
+            // Tenta trazer ordenado, se falhar (índice), traz tudo e filtra
+            try {
+                const q = query(collection(db, "historico"), orderBy("data_hora", "desc"));
+                const snapshot = await getDocs(q);
+                snapshot.forEach(doc => { const d = doc.data(); if(d.placa===ATUAL.placa) hist.push(d); });
+            } catch (e) {
+                const snapshot = await getDocs(collection(db, "historico"));
+                snapshot.forEach(doc => { const d = doc.data(); if(d.placa===ATUAL.placa) hist.push(d); });
+            }
+            
+            if(!hist.length) el.innerHTML = 'Nada recente.';
+            else el.innerHTML = hist.slice(0,5).map(h => {
+                const dataStr = h.data_hora?.toDate ? h.data_hora.toDate().toLocaleDateString('pt-BR') : '-';
+                return `<div class="border-b pb-1 mb-1 text-[10px]"><span class="font-bold text-slate-700">${h.acao}</span> (${dataStr}) - ${h.usuario}</div>`;
+            }).join('');
+        }
     </script>
 </body>
 </html>
